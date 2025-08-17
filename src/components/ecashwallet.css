@@ -1,0 +1,61 @@
+.ecash-wallet {
+  text-align: center;
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+  max-width: 400px;
+  margin: auto;
+}
+
+.wallet-qr {
+  margin: 10px 0;
+}
+
+.connect-btn, .disconnect-btn {
+  padding: 10px 20px;
+  font-size: 16px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.connect-btn {
+  background-color: blue;
+  color: white;
+}
+
+.disconnect-btn {
+  background-color: red;
+  color: white;
+}
+
+.mnemonic-section {
+  text-align: left;
+  margin-bottom: 15px;
+}
+
+.mnemonic-section label {
+  font-weight: bold;
+}
+
+.mnemonic-section textarea {
+  width: 100%;
+  padding: 5px;
+  border-radius: 5px;
+  border: 1px solid #ddd;
+}
+
+.mnemonic-buttons {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 5px;
+}
+
+.mnemonic-buttons button {
+  flex: 1;
+  margin: 0 5px;
+  padding: 8px;
+  cursor: pointer;
+}
+

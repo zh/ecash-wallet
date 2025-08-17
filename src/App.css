@@ -1,0 +1,199 @@
+/* Basic App styles */
+.app-container {
+  min-height: 100vh;
+  background-color: var(--bg-primary, #ffffff);
+  color: var(--text-primary, #000000);
+}
+
+/* Mobile layout */
+.mobile-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.top-bar {
+  padding: 1rem;
+  background-color: var(--bg-secondary, #f5f5f5);
+  border-bottom: 1px solid var(--border-color, #e0e0e0);
+}
+
+.top-bar-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.page-title {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.main-content {
+  flex: 1;
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+.bottom-navigation {
+  padding: 1rem;
+  background-color: var(--bg-secondary, #f5f5f5);
+  border-top: 1px solid var(--border-color, #e0e0e0);
+  text-align: center;
+  color: var(--text-secondary, #666666);
+}
+
+/* Disconnected view styles are now in disconnected.css */
+/* Mnemonic styles are now in mnemonic.css */
+/* Wallet styles are now in wallet.css */
+
+.error {
+  color: var(--error-color, #dc2626);
+  margin: 1rem 0;
+}
+
+.loading {
+  color: var(--text-secondary, #666666);
+  margin: 1rem 0;
+}
+
+.app-footer {
+  text-align: center;
+  padding: 1rem;
+  color: var(--text-secondary, #666666);
+  font-size: 0.9rem;
+}
+
+.app-footer a {
+  color: var(--primary-color, #2563eb);
+  text-decoration: none;
+}
+
+.app-footer a:hover {
+  text-decoration: underline;
+}
+
+/* Page content */
+.home-content,
+.tokens-content,
+.send-content,
+.tools-content {
+  padding: 1rem 0;
+}
+
+.balance-section,
+.address-section {
+  margin-bottom: 2rem;
+  padding: 1rem;
+  background-color: var(--bg-secondary, #f9f9f9);
+  border-radius: 8px;
+}
+
+/* Mnemonic styles moved to mnemonic.css */
+
+/* Notification Component */
+.notification {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  left: 1rem;
+  padding: 1rem;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 1000;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.notification-success {
+  background-color: #d1fae5;
+  border: 1px solid #10b981;
+  color: #065f46;
+}
+
+.notification-error {
+  background-color: #fee2e2;
+  border: 1px solid #dc2626;
+  color: #991b1b;
+}
+
+.notification-warning {
+  background-color: #fef3c7;
+  border: 1px solid #f59e0b;
+  color: #92400e;
+}
+
+.notification-close {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 1rem;
+  color: inherit;
+}
+
+/* Wallet Controls moved to wallet.css */
+
+/* HomePage specific styles */
+.wallet-actions-top {
+  margin-bottom: 2rem;
+  text-align: right;
+}
+
+.disconnect-button-home {
+  background-color: var(--accent-danger, #f44336);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.disconnect-button-home:hover {
+  background-color: var(--accent-danger-hover, #da190b);
+}
+
+.disconnect-button-home:active {
+  background-color: var(--accent-danger-active, #c62828);
+}
+
+/* Update CSS variables to use theme system */
+.app-container {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+/* Override previous CSS with theme-aware variables moved to component CSS files */
+
+.balance-section,
+.address-section {
+  background-color: var(--card-bg);
+  border: 1px solid var(--card-border);
+  box-shadow: 0 2px 4px var(--card-shadow);
+}
+
+/* Notification updates for theme system */
+.notification-success {
+  background-color: var(--notification-success-bg);
+  border: 1px solid var(--notification-success-border);
+  color: var(--notification-success-text);
+}
+
+.notification-error {
+  background-color: var(--notification-error-bg);
+  border: 1px solid var(--notification-error-border);
+  color: var(--notification-error-text);
+}
+
+.notification-warning {
+  background-color: var(--notification-warning-bg);
+  border: 1px solid var(--notification-warning-border);
+  color: var(--notification-warning-text);
+}
+
