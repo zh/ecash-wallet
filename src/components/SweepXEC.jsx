@@ -61,7 +61,7 @@ const SweepXEC = () => {
     }
 
     if (!isValidWIF(wif)) {
-      setValidationError('Invalid private key format. Must be WIF format (L, K, or 5)');
+      setValidationError('Invalid private key format. Must be WIF format (L/K/5/c/9)');
       return false;
     }
 
@@ -76,49 +76,6 @@ const SweepXEC = () => {
     validateWIF(sanitized);
   };
 
-  // Convert WIF to hex private key
-  const wifToHex = (wif) => {
-    try {
-      // Base58 decode function
-      const base58Decode = (str) => {
-        const alphabet = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
-        const base = alphabet.length;
-
-        let num = 0n;
-        for (let char of str) {
-          const index = alphabet.indexOf(char);
-          if (index === -1) throw new Error('Invalid character in base58');
-          num = num * BigInt(base) + BigInt(index);
-        }
-
-        // Convert to bytes
-        const bytes = [];
-        while (num > 0) {
-          bytes.unshift(Number(num % 256n));
-          num = num / 256n;
-        }
-
-        // Add leading zeros
-        for (let i = 0; i < str.length && str[i] === '1'; i++) {
-          bytes.unshift(0);
-        }
-
-        return bytes;
-      };
-
-      const decoded = base58Decode(wif);
-
-      // Remove version byte (0x80), compression flag (0x01), and checksum (4 bytes)
-      // WIF structure: [version(1)] + [private_key(32)] + [compression(1)] + [checksum(4)]
-      const privateKeyBytes = decoded.slice(1, 33); // Extract 32-byte private key
-
-      // Convert bytes to hex
-      return privateKeyBytes.map(b => b.toString(16).padStart(2, '0')).join('');
-    } catch (error) {
-      console.error('WIF to hex conversion failed:', error);
-      return null;
-    }
-  };
 
   // Check paper wallet balance before sweep
   const checkPaperWallet = async () => {
@@ -131,19 +88,11 @@ const SweepXEC = () => {
 
       console.log('🔍 SWEEP DEBUG - Starting balance check for WIF:', sweepKey.substring(0, 10) + '...');
 
-      // Convert WIF to hex for MinimalXecWallet
-      const hexPrivateKey = wifToHex(sweepKey);
-      if (!hexPrivateKey) {
-        throw new Error('Failed to convert WIF to hex private key');
-      }
+      // Direct WIF import to MinimalXecWallet - no conversion needed!
+      console.log('🔍 SWEEP DEBUG - Creating wallet directly from WIF...');
+      const tempWallet = new window.MinimalXecWallet(sweepKey);
 
-      console.log('🔍 SWEEP DEBUG - Converted WIF to hex:', hexPrivateKey.substring(0, 10) + '...');
-
-      // Create temporary wallet using hex private key (MinimalXecWallet works better with hex)
-      console.log('🔍 SWEEP DEBUG - Creating wallet from hex private key...');
-      const tempWallet = new window.MinimalXecWallet(hexPrivateKey);
-
-      console.log('🔍 SWEEP DEBUG - Created MinimalXecWallet instance');
+      console.log('🔍 SWEEP DEBUG - Created MinimalXecWallet instance from WIF');
 
       await tempWallet.walletInfoPromise;
       console.log('🔍 SWEEP DEBUG - Wallet info promise resolved');
@@ -212,14 +161,8 @@ const SweepXEC = () => {
       setBusy(true);
       setNotification({ type: 'info', message: 'Sweeping funds...' });
 
-      // Convert WIF to hex for sweeping (same as balance check)
-      const hexPrivateKey = wifToHex(sweepKey);
-      if (!hexPrivateKey) {
-        throw new Error('Failed to convert WIF to hex private key');
-      }
-
-      // Create temporary wallet for sweeping using hex
-      const tempWallet = new window.MinimalXecWallet(hexPrivateKey);
+      // Direct WIF import for sweeping - no conversion needed!
+      const tempWallet = new window.MinimalXecWallet(sweepKey);
       await tempWallet.walletInfoPromise;
 
       // Use sendAllXec to sweep all funds
@@ -274,7 +217,7 @@ const SweepXEC = () => {
             onChange={(e) => handleInputChange(e.target.value)}
             disabled={busy}
             className={`form-input ${validationError ? 'error' : ''}`}
-            placeholder="Enter WIF private key (L... or K... or 5...)"
+            placeholder="Enter WIF private key (L/K/5/c/9...)"
           />
           <button
             type="button"

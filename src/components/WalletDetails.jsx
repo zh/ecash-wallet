@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useAtom, useSetAtom } from 'jotai';
 import { walletAtom, notificationAtom } from '../atoms';
+import { hexToWIF } from '../utils/wifUtils';
 import '../styles/walletdetails.css';
 
 const WalletDetails = () => {
@@ -17,68 +18,8 @@ const WalletDetails = () => {
     return xecAddress.replace('ecash:', 'etoken:');
   };
 
-  // Base58 encoding function
-  const base58Encode = useCallback((bytes) => {
-    const alphabet = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
-    const base = alphabet.length;
 
-    // Convert bytes to big integer
-    let num = 0n;
-    for (let i = 0; i < bytes.length; i++) {
-      num = num * 256n + BigInt(bytes[i]);
-    }
-
-    // Encode to base58
-    let encoded = '';
-    while (num > 0) {
-      const remainder = num % BigInt(base);
-      num = num / BigInt(base);
-      encoded = alphabet[Number(remainder)] + encoded;
-    }
-
-    // Add leading zeros as '1's
-    for (let i = 0; i < bytes.length && bytes[i] === 0; i++) {
-      encoded = '1' + encoded;
-    }
-
-    return encoded;
-  }, []);
-
-  // Hex to WIF conversion function
-  const hexToWIF = useCallback((hexKey, crypto) => {
-    try {
-      // Convert hex string to byte array
-      const privateKeyBytes = [];
-      for (let i = 0; i < hexKey.length; i += 2) {
-        privateKeyBytes.push(parseInt(hexKey.substr(i, 2), 16));
-      }
-
-      // Create payload: version(0x80) + private key + compression flag(0x01)
-      const payload = [0x80, ...privateKeyBytes, 0x01];
-
-      // Double SHA256 hash for checksum
-      const hash1Words = crypto.SHA256(crypto.lib.WordArray.create(payload));
-      const hash2Words = crypto.SHA256(hash1Words);
-
-      // Convert hash to bytes and take first 4 bytes as checksum
-      const hash2Hex = hash2Words.toString(crypto.enc.Hex);
-      const checksum = [];
-      for (let i = 0; i < 8; i += 2) {
-        checksum.push(parseInt(hash2Hex.substr(i, 2), 16));
-      }
-
-      // Combine payload + checksum
-      const fullPayload = [...payload, ...checksum];
-
-      // Encode to Base58
-      return base58Encode(fullPayload);
-    } catch (error) {
-      console.error('WIF encoding error:', error);
-      return null;
-    }
-  }, [base58Encode]);
-
-  // Convert hex to WIF asynchronously
+  // Convert hex to WIF asynchronously using robust conversion
   useEffect(() => {
     const convertHexToWIF = async () => {
       const hexPrivateKey = wallet?.walletInfo?.privateKey;
@@ -89,27 +30,23 @@ const WalletDetails = () => {
         return;
       }
 
-      // If wallet stores WIF in privateKey field (starts with K, L, or 5)
-      if (hexPrivateKey && (hexPrivateKey.startsWith('K') || hexPrivateKey.startsWith('L') || hexPrivateKey.startsWith('5'))) {
+      // If wallet stores WIF in privateKey field (starts with K, L, 5, c, or 9)
+      if (hexPrivateKey && /^[KL5c9]/.test(hexPrivateKey)) {
         setWifPrivateKey(hexPrivateKey);
         return;
       }
 
-      // Convert hex format to WIF using proper crypto conversion
+      // Convert hex format to WIF using robust minimal-xec-wallet implementation
       if (hexPrivateKey && hexPrivateKey.length === 64 && /^[a-fA-F0-9]+$/.test(hexPrivateKey)) {
         try {
-          if (window.MinimalXecWallet) {
-            const tempWallet = new window.MinimalXecWallet();
-            const crypto = tempWallet.crypto;
+          console.log('🔧 Converting hex to WIF using robust implementation:', hexPrivateKey.substring(0, 10) + '...');
 
-            console.log('🔧 Converting hex to WIF:', hexPrivateKey.substring(0, 10) + '...');
-
-            const wif = hexToWIF(hexPrivateKey, crypto);
-            if (wif && (wif.startsWith('K') || wif.startsWith('L') || wif.startsWith('5'))) {
-              console.log('🔧 Successfully converted to WIF:', wif.substring(0, 10) + '...');
-              setWifPrivateKey(wif);
-              return;
-            }
+          // Use the robust WIF conversion utility
+          const wif = hexToWIF(hexPrivateKey, true, false); // compressed, mainnet
+          if (wif) {
+            console.log('🔧 Successfully converted to WIF:', wif.substring(0, 10) + '...');
+            setWifPrivateKey(wif);
+            return;
           }
 
           console.log('🔧 WIF conversion failed, using hex');
@@ -126,7 +63,7 @@ const WalletDetails = () => {
     if (wallet?.walletInfo?.privateKey) {
       convertHexToWIF();
     }
-  }, [wallet?.walletInfo?.privateKey, wallet?.walletInfo?.privateKeyWif, hexToWIF]);
+  }, [wallet?.walletInfo?.privateKey, wallet?.walletInfo?.privateKeyWif]);
 
   const getWIFFromHex = () => {
     return wifPrivateKey;

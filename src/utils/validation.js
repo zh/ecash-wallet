@@ -160,25 +160,39 @@ export const isValidTxId = (txid) => {
 };
 
 /**
- * Validate WIF (Wallet Import Format) private key or hex private key
- * @param {string} privateKey - WIF or hex private key to validate
- * @returns {boolean} True if valid private key format
+ * Validate WIF (Wallet Import Format) private key using robust cryptographic validation
+ * @param {string} privateKey - WIF private key to validate
+ * @returns {boolean} True if valid WIF format with correct checksum
  */
 export const isValidWIF = (privateKey) => {
-  if (!privateKey || typeof privateKey !== 'string') {
+  try {
+    if (!privateKey || typeof privateKey !== 'string') {
+      return false;
+    }
+
+    const sanitized = sanitizeInput(privateKey, 'wif');
+
+    // Use minimal-xec-wallet's robust WIF validation
+    // This includes cryptographic checksum validation and secp256k1 range checking
+    if (typeof window !== 'undefined' && window.MinimalXecWallet) {
+      const tempWallet = new window.MinimalXecWallet();
+      return tempWallet.validateWIF(sanitized);
+    }
+
+    // Fallback to basic format validation if minimal-xec-wallet not available
+    // WIF should be 51 or 52 characters and start with L, K, 5, c, or 9
+    // L and K are for mainnet compressed keys (52 chars)
+    // 5 is for mainnet uncompressed keys (51 chars)
+    // c is for testnet compressed keys (52 chars)
+    // 9 is for testnet uncompressed keys (51 chars)
+    return (
+      (sanitized.length === 51 && (sanitized[0] === '5' || sanitized[0] === '9')) ||
+      (sanitized.length === 52 && (sanitized[0] === 'L' || sanitized[0] === 'K' || sanitized[0] === 'c'))
+    ) && /^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+$/.test(sanitized);
+  } catch (error) {
+    console.warn('WIF validation error:', error.message);
     return false;
   }
-
-  const sanitized = sanitizeInput(privateKey, 'wif');
-
-  // Check for WIF format only
-  // WIF should be 51 or 52 characters and start with L, K, or 5
-  // L and K are for compressed keys (52 chars)
-  // 5 is for uncompressed keys (51 chars)
-  return (
-    (sanitized.length === 51 && sanitized[0] === '5') ||
-    (sanitized.length === 52 && (sanitized[0] === 'L' || sanitized[0] === 'K'))
-  ) && /^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+$/.test(sanitized);
 };
 
 /**
