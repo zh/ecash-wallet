@@ -421,7 +421,7 @@ const SendTokens = ({ preSelectedToken = null }) => {
           </div>
           {selectedToken && (
             <div className="balance-info">
-              Available: {formatTokenBalance(selectedToken.balance, selectedToken.decimals)} {selectedToken.symbol}
+              Available: {selectedToken.balance} {selectedToken.symbol}
             </div>
           )}
         </div>

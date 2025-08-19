@@ -26,6 +26,7 @@ const TokenCard = ({
     name = 'Unknown Token',
     symbol = 'N/A',
     balance = 0,
+    decimals = 0,
     type = 'Unknown'
   } = token;
 
@@ -60,6 +61,7 @@ const TokenCard = ({
           <div className="token-name"><strong>Name:</strong> {name}</div>
           <div className="token-ticker"><strong>Symbol:</strong> {symbol}</div>
           <div className="token-type"><strong>Type:</strong> {type}</div>
+          <div className="token-decimals"><strong>Decimals:</strong> {decimals}</div>
           <div className="token-amount"><strong>Balance:</strong> {formatTokenBalance(balance)}</div>
         </div>
         <Address addressFormat={'long'} showQR={true} />

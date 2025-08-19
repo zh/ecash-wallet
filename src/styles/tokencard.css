@@ -206,6 +206,7 @@
   .token-card-name,
   .token-card-ticker,
   .token-card-type,
+  .token-card-decimals,
   .token-card-amount {
     font-size: 13px;
   }
