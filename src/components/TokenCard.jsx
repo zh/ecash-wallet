@@ -57,11 +57,10 @@ const TokenCard = ({
         <TokenIcon token={token} zoomed={true} />
         <div className="token-details zoomed-details">
           <div className="token-id token-id-long"><strong>Token ID:</strong> {tokenId}</div>
-          <div className="token-id token-id-short"><strong>ID:</strong> {shortify(tokenId)}</div>
           <div className="token-name"><strong>Name:</strong> {name}</div>
           <div className="token-ticker"><strong>Symbol:</strong> {symbol}</div>
           <div className="token-type"><strong>Type:</strong> {type}</div>
-          <div className="token-amount"><strong>Balance:</strong> {formatTokenBalance(balance)} {symbol}</div>
+          <div className="token-amount"><strong>Balance:</strong> {formatTokenBalance(balance)}</div>
         </div>
         <Address addressFormat={'long'} showQR={true} />
         <SendTokens preSelectedToken={token} />
@@ -76,7 +75,7 @@ const TokenCard = ({
         <div className="token-card-name"><strong>Name:</strong> {name}</div>
         <div className="token-card-ticker"><strong>Symbol:</strong> {symbol}</div>
         <div className="token-card-type"><strong>Type:</strong> {type}</div>
-        <div className="token-card-amount"><strong>Balance:</strong> {formatTokenBalance(balance)} {symbol}</div>
+        <div className="token-card-amount"><strong>Balance:</strong> {formatTokenBalance(balance)}</div>
       </div>
     </div>
   );
