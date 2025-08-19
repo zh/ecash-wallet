@@ -36,9 +36,7 @@ const HomePage = () => {
           <div className="address-section">
             <Address
               addressFormat={'long'}
-              showEToken={false}
               showQR={true}
-              showSwitch={true}
             />
           </div>
         )}

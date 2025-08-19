@@ -25,7 +25,6 @@ const ECashWallet = () => {
   useEffect(() => {
     if (!walletConnected || !wallet) return;
 
-    console.log(`${xecAddress} balance:`)
     const fetchBalance = async () => {
       try {
         const { hash } = decodeCashAddress(xecAddress);
@@ -46,7 +45,6 @@ const ECashWallet = () => {
         if (totalValue !== balance) {
           setBalance(totalValue);
         }
-        console.log(`Balance for ${xecAddress}: ${totalValue} satoshis ${totalValue / 100.0} XEC`);
       } catch (error) {
         console.error(`Error fetching balance:`, error);
       }
@@ -111,7 +109,6 @@ const ECashWallet = () => {
 
   const connectWallet = () => {
     if (!wallet) {
-      console.log('server not connected.');
       return;
     }
 

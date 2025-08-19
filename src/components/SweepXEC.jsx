@@ -86,30 +86,21 @@ const SweepXEC = () => {
       setBusy(true);
       setNotification({ type: 'info', message: 'Checking paper wallet balance...' });
 
-      console.log('🔍 SWEEP DEBUG - Starting balance check for WIF:', sweepKey.substring(0, 10) + '...');
-
       // Direct WIF import to MinimalXecWallet - no conversion needed!
-      console.log('🔍 SWEEP DEBUG - Creating wallet directly from WIF...');
       const tempWallet = new window.MinimalXecWallet(sweepKey);
 
-      console.log('🔍 SWEEP DEBUG - Created MinimalXecWallet instance from WIF');
-
       await tempWallet.walletInfoPromise;
-      console.log('🔍 SWEEP DEBUG - Wallet info promise resolved');
 
       // Validate wallet was created successfully
       if (!tempWallet.walletInfo?.xecAddress) {
         throw new Error('Invalid private key - could not derive address');
       }
 
-      const derivedAddress = tempWallet.walletInfo.xecAddress;
-      console.log('✅ SWEEP - Derived address:', derivedAddress);
+      tempWallet.walletInfo.xecAddress;
 
       const xecBalance = await tempWallet.getXecBalance();
-      console.log('✅ SWEEP - Balance found:', xecBalance, 'XEC');
 
       if (xecBalance === 0) {
-        console.log('🔍 SWEEP DEBUG - Balance is zero, showing warning');
         setNotification({ type: 'warning', message: 'Paper wallet has zero balance' });
         setPhase('input');
         return;
@@ -144,7 +135,6 @@ const SweepXEC = () => {
         errorMessage = 'Network error. Please check your connection.';
       }
 
-      console.log('🔍 SWEEP DEBUG - Final error message:', errorMessage);
       setNotification({ type: 'error', message: errorMessage });
       setPhase('input');
     } finally {
@@ -168,8 +158,6 @@ const SweepXEC = () => {
       // Use sendAllXec to sweep all funds
       const txid = await tempWallet.sendAllXec(paperWalletInfo.targetAddress);
 
-      console.log(`Sweep completed - TXID: ${txid}`);
-      console.log(`Explorer: https://explorer.e.cash/tx/${txid}`);
 
       setNotification({
         type: 'success',

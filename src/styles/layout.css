@@ -89,6 +89,20 @@
   overflow-y: auto;
 }
 
+/* Mobile responsive main content */
+@media (max-width: 600px) {
+  .main-content {
+    padding: 12px 8px;
+  }
+}
+
+/* Very small screens */
+@media (max-width: 400px) {
+  .main-content {
+    padding: 8px 4px;
+  }
+}
+
 .bottom-navigation {
   background: var(--nav-bg);
   border-top: 1px solid var(--nav-border);

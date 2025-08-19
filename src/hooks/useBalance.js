@@ -18,14 +18,11 @@ const useBalance = (refreshInterval = 10000) => {
 
   // Memoize fetchBalance to avoid creating a new function on each render
   const fetchBalance = useCallback(async () => {
-    console.log('fetchBalance called - wallet:', !!wallet, 'connected:', walletConnected);
-
     // Always set loading true first, even if we return early
     setLoading(true);
     setError(null);
 
     if (!wallet || !walletConnected) {
-      console.log('Early return: wallet not available');
       setBalance(0); // Reset to 0 if wallet is not available
       setLoading(false);
       return;
@@ -33,14 +30,49 @@ const useBalance = (refreshInterval = 10000) => {
 
     try {
       // Defensive check: ensure wallet is still valid before calling API
-      if (!wallet.getXecBalance || typeof wallet.getXecBalance !== 'function') {
-        throw new Error('Wallet getXecBalance method not available');
+      if (!wallet.getDetailedBalance || typeof wallet.getDetailedBalance !== 'function') {
+        throw new Error('Wallet getDetailedBalance method not available');
       }
 
-      console.log('Calling wallet.getXecBalance()...');
-      // Use XEC-specific method - returns balance in XEC units (2 decimal places)
-      const xecBalance = await wallet.getXecBalance();
-      console.log('Balance received:', xecBalance);
+      // Use CLI's working pattern - getDetailedBalance and proper UTXO filtering
+      // First ensure wallet UTXOs are fresh
+      await wallet.initialize();
+
+      // Get detailed balance like CLI does (this works reliably)
+      const balanceData = await wallet.getDetailedBalance();
+      let spendableBalance = balanceData.total; // Start with total balance
+
+      // Calculate spendable balance by subtracting eToken dust (CLI pattern)
+      if (wallet.utxos && wallet.utxos.utxoStore && wallet.utxos.utxoStore.xecUtxos) {
+        const utxos = wallet.utxos.utxoStore.xecUtxos;
+        let pureXecTotal = 0;
+
+        // Use exact CLI filtering logic
+        for (const utxo of utxos) {
+          // Get XEC amount using CLI's method - prefer sats property
+          let xecAmount = 0;
+          if (utxo.sats !== undefined) {
+            const satoshis = parseInt(utxo.sats) || 0;
+            xecAmount = satoshis / 100; // Convert from satoshis to XEC
+          } else if (utxo.value) {
+            const satoshis = parseInt(utxo.value) || 0;
+            xecAmount = satoshis / 100; // Convert from satoshis to XEC
+          }
+
+          // Use CLI's exact token detection logic
+          if (utxo.token && utxo.token.tokenId) {
+            // This UTXO is locked with tokens (eToken dust) - skip it
+          } else {
+            // This is pure XEC UTXO (spendable)
+            pureXecTotal += xecAmount;
+          }
+        }
+
+        // Use the calculated pure XEC total (excludes eToken dust)
+        spendableBalance = pureXecTotal;
+      }
+
+      const xecBalance = spendableBalance;
 
       // Defensive check: ensure wallet is still connected after API call
       if (!wallet || !walletConnected) {
@@ -60,7 +92,6 @@ const useBalance = (refreshInterval = 10000) => {
 
       // Don't disconnect wallet on balance fetch errors - just log and continue
     } finally {
-      console.log('Setting loading false');
       setLoading(false);
     }
   }, [wallet, walletConnected, setBalance]);

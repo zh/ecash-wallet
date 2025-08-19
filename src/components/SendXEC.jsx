@@ -40,7 +40,7 @@ const SendXEC = () => {
     const interval = setInterval(() => {
       const now = Date.now();
       const timeSinceLastTx = now - lastTransactionTime;
-      const minInterval = 15000; // 15 seconds
+      const minInterval = 5000; // 5 seconds
       const remaining = Math.max(0, Math.ceil((minInterval - timeSinceLastTx) / 1000));
 
       setCountdown(remaining);
@@ -128,15 +128,13 @@ const SendXEC = () => {
   const handleSend = async (e) => {
     e.preventDefault();
 
-    console.log('🚀🚀🚀 HANDLE SEND CALLED! 🚀🚀🚀');
-    console.log('🚀 Form state:', sendForm);
 
     if (!walletConnected) {
       setNotification({ type: 'error', message: 'Wallet is not connected.' });
       return;
     }
 
-    // Prevent rapid consecutive transactions (minimum 15 seconds between sends)
+    // Prevent rapid consecutive transactions (minimum 5 seconds between sends)
     if (countdown > 0) {
       setNotification({
         type: 'error',
@@ -150,17 +148,13 @@ const SendXEC = () => {
       const sanitizedRecipient = sanitizeInput(sendForm.address, 'address');
       const sanitizedAmount = sanitizeInput(sendForm.amount, 'amount');
 
-      console.log('🚀 handleSend - Original address:', sendForm.address);
-      console.log('🚀 handleSend - Sanitized address:', sanitizedRecipient);
 
       if (!sanitizedRecipient) {
         setNotification({ type: 'error', message: 'Recipient address cannot be empty.' });
         return;
       }
 
-      console.log('🚀 handleSend - About to validate:', sanitizedRecipient);
       const isValid = isValidXECAddress(sanitizedRecipient);
-      console.log('🚀 handleSend - Validation result:', isValid);
 
       if (!isValid) {
         setNotification({ type: 'error', message: 'Invalid recipient address format.' });
@@ -173,125 +167,55 @@ const SendXEC = () => {
       }
 
       const xecAmount = convertAmount(sanitizedAmount, sendForm.unit);
-      console.log('🚀 Converted amount to XEC:', xecAmount);
 
       if (xecAmount < 5.46) {
         setNotification({ type: 'error', message: 'Amount too small. Minimum is 5.46 XEC (546 satoshis).' });
         return;
       }
 
-      console.log('🚀 Balance check:', {
-        balance,
-        xecAmount,
-        balanceType: typeof balance,
-        xecAmountType: typeof xecAmount,
-        hasSufficientBalance: balance >= xecAmount
-      });
 
-      if (xecAmount > balance) {
-        setNotification({ type: 'error', message: 'Insufficient balance for this transaction.' });
+      // Quick preliminary balance check for immediate user feedback
+      // More realistic fee estimation for complex UTXO sets and potential token dust
+      const estimatedFee = 0.3; // Increased from 0.1 to 0.3 XEC for safety margin
+      const totalNeeded = xecAmount + estimatedFee;
+
+      if (totalNeeded > balance) {
+        setNotification({
+          type: 'error',
+          message: `Insufficient balance. Need ~${totalNeeded.toFixed(2)} XEC (${xecAmount.toFixed(2)} + ~${estimatedFee} fee), but have ${balance.toFixed(2)} XEC.`
+        });
         return;
       }
 
-      // Convert XEC to satoshis for the API (XEC * 100 = satoshis)
-      const amountSat = Math.round(xecAmount * 100);
-      console.log('🚀 Amount in satoshis:', amountSat);
-
       setBusy(true);
 
-      console.log('🚀 About to call wallet.sendXec with:', {
-        address: sanitizedRecipient,
-        amountSat: amountSat
-      });
 
-      // Debug balance before entering safeAsyncOperation
-      console.log('🚀 BEFORE safeAsyncOperation - Our balance atom:', balance, 'XEC');
-      console.log('🚀 BEFORE safeAsyncOperation - Wallet object:', !!wallet);
-      console.log('🚀 BEFORE safeAsyncOperation - Wallet getXecBalance method:', typeof wallet?.getXecBalance);
-
-      try {
-        const quickBalanceCheck = await wallet.getXecBalance();
-        console.log('🚀 BEFORE safeAsyncOperation - Wallet reports balance:', quickBalanceCheck, 'XEC');
-      } catch (balanceError) {
-        console.log('🚀 BEFORE safeAsyncOperation - Balance check failed:', balanceError.message);
-      }
 
       const result = await safeAsyncOperation(
         async () => {
-          // Check wallet balance right before sending
-          console.log('🚀 Checking wallet balance before send...');
-          const walletBalance = await wallet.getXecBalance();
-          console.log('🚀 Wallet reports balance:', walletBalance, 'XEC');
-          console.log('🚀 Our balance atom shows:', balance, 'XEC');
-          console.log('🚀 Trying to send:', xecAmount, 'XEC (', amountSat, 'sats)');
-
-          // Refresh wallet UTXOs before sending to avoid stale input errors
-          console.log('🚀 Refreshing wallet UTXOs...');
+          // Refresh wallet UTXOs before sending to get fresh data
           await wallet.initialize();
 
-          // Force UTXO refresh if needed
-          console.log('🚀 Forcing UTXO refresh...');
-          if (typeof wallet.refreshUtxos === 'function') {
-            await wallet.refreshUtxos();
-            console.log('🚀 Called wallet.refreshUtxos()');
+          // Authoritative balance check with fresh UTXO data using CLI pattern
+          const balanceData = await wallet.getDetailedBalance();
+          const freshBalance = balanceData.total;
+
+          if (xecAmount > freshBalance) {
+            throw new Error(`Insufficient balance after refresh. Need ${xecAmount.toFixed(2)} XEC, but have ${freshBalance.toFixed(2)} XEC.`);
           }
 
-          // Try alternative UTXO methods
-          if (typeof wallet.updateUtxos === 'function') {
-            await wallet.updateUtxos();
-            console.log('🚀 Called wallet.updateUtxos()');
-          }
+          // Send using CLI's exact working pattern
+          // Convert XEC to satoshis (CLI pattern: Math.floor(amountToSend * 100))
+          const satoshis = Math.floor(xecAmount * 100);
 
-          // Check balance again after refresh
-          const walletBalanceAfterRefresh = await wallet.getXecBalance();
-          console.log('🚀 Wallet balance after refresh:', walletBalanceAfterRefresh, 'XEC');
+          // Create output object exactly like CLI
+          const outputs = [{
+            address: sanitizedRecipient,
+            amount: satoshis
+          }];
 
-          // Send using minimal-xec-wallet API (expects outputs array with amountSat)
-          console.log('🚀 Calling wallet.sendXec...');
-          const outputs = [
-            {
-              address: sanitizedRecipient,
-              amountSat: amountSat  // API expects amountSat in satoshis
-            }
-          ];
-          console.log('🚀 Outputs array:', outputs);
-
-          // Get wallet UTXOs for debugging
-          try {
-            const utxoResponse = await wallet.getUtxos();
-            console.log('🚀 Raw UTXOs response:', typeof utxoResponse, utxoResponse);
-
-            // Handle different UTXO response formats
-            let utxosArray = null;
-            if (Array.isArray(utxoResponse)) {
-              utxosArray = utxoResponse;
-            } else if (utxoResponse && utxoResponse.utxos && Array.isArray(utxoResponse.utxos)) {
-              utxosArray = utxoResponse.utxos;
-            } else if (utxoResponse && utxoResponse.success && utxoResponse.utxos) {
-              utxosArray = utxoResponse.utxos;
-            }
-
-            if (utxosArray && Array.isArray(utxosArray)) {
-              console.log('🚀 Wallet UTXOs count:', utxosArray.length);
-              const totalValue = utxosArray.reduce((sum, utxo) => sum + (utxo.satoshis || utxo.value || 0), 0);
-              console.log('🚀 Wallet UTXOs total value:', totalValue, 'sats (', (totalValue/100).toFixed(2), 'XEC)');
-              if (utxosArray.length > 0) {
-                console.log('🚀 All UTXOs:', utxosArray.map(u => ({
-                  value: u.satoshis || u.value,
-                  txid: u.txid?.slice(0, 8),
-                  vout: u.vout
-                })));
-              }
-            } else {
-              console.log('🚀 Could not parse UTXOs array from response');
-            }
-          } catch (utxoError) {
-            console.log('🚀 Could not get UTXOs:', utxoError.message);
-            console.log('🚀 UTXO error stack:', utxoError.stack);
-          }
-
+          // Use CLI's exact send method
           const txid = await wallet.sendXec(outputs);
-          console.log('🚀 Transaction successful! TXID:', txid);
           return txid;
         },
         'send_xec'
@@ -315,19 +239,12 @@ const SendXEC = () => {
         message: `${xecAmount.toFixed(2)} XEC sent! TXID: ${result.substring(0, 8)}...`
       });
     } catch (error) {
-      console.log('🚀 Caught error in handleSend:', error);
-      console.log('🚀 Error message:', error.message);
-      console.log('🚀 Error stack:', error.stack);
-      console.log('🚀 Full error object:', JSON.stringify(error, null, 2));
-
       const handledError = handleError(error, 'send_transaction');
-      console.log('🚀 Handled error:', handledError);
 
       // If error is related to missing inputs, trigger balance refresh
       if (handledError.category === 'wallet' &&
           (error.message?.toLowerCase().includes('missing inputs') ||
            error.message?.toLowerCase().includes('inputs-missingorspent'))) {
-        console.log('🚀 Triggering balance refresh due to UTXO error');
         setBalanceRefreshTrigger(Date.now());
       }
 

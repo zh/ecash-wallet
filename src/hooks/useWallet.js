@@ -1,56 +1,14 @@
-import { useEffect, useCallback } from 'react';
+// DEPRECATED: This hook is deprecated and maintained only for backward compatibility
+// The main app should use useConnectWallet instead, which properly manages MinimalXecWallet instances
+// This hook previously managed Chronik client connections, but minimal-xec-wallet handles this internally
+
 import { useAtom } from 'jotai';
-import { walletConnectedAtom, walletAtom } from '../atoms';
-import { ChronikClient } from 'chronik-client';
+import { walletAtom } from '../atoms';
 
-const chronikServers = [
-  'https://chronik-native1.fabien.cash',
-  'https://chronik-native2.fabien.cash',
-];
-
-let currentServerIndex = 0;
-
-// Function to create a new Chronik client instance with the current server
-const getChronikClient = () => {
-  return new ChronikClient(chronikServers[currentServerIndex]);
-};
-
-// Function to switch to the next available Chronik server
-const switchServer = () => {
-  currentServerIndex = (currentServerIndex + 1) % chronikServers.length;
-  console.warn(`Switching to Chronik server: ${chronikServers[currentServerIndex]}`);
-};
-
-
-const useWallet = (refreshInterval = 10000) => {
-  const [walletConnected, setWalletConnected] = useAtom(walletConnectedAtom);
-  const [wallet, setWallet] = useAtom(walletAtom);
-
-  // Memoize fetchBalance to avoid creating a new function on each render
-  const connectChronik = useCallback(async () => {
-    if (walletConnected) return;
-
-    for (let i = 0; i < chronikServers.length; i++) {
-      try {
-        const chronik = getChronikClient();
-        if (chronik) {
-         console.log(`Connected to Chronik server: ${chronikServers[i]}`);
-          setWallet(chronik);
-          setWalletConnected(true);
-        }
-      } catch {
-        switchServer();
-      }
-    }
-  }, [walletConnected, setWallet, setWalletConnected]);
-
-  useEffect(() => {
-    if (!walletConnected) {
-      connectChronik(); // Fetch balance when wallet connects
-      const interval = setInterval(connectChronik, refreshInterval); // Refresh every 5 seconds
-      return () => clearInterval(interval); // Cleanup interval on unmount or disconnect
-    }
-  }, [walletConnected, connectChronik, refreshInterval]);
+// Simplified useWallet hook - just returns the current wallet from the atom
+// The actual wallet connection is handled by useConnectWallet
+const useWallet = () => {
+  const [wallet] = useAtom(walletAtom);
 
   return { wallet };
 };

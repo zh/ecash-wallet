@@ -83,66 +83,7 @@
   }
 }
 
-.switch-address-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 8px;
-  margin: 6px 0;
-}
-
-.switch {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 140px;
-  height: 32px;
-  background: #333;
-  border-radius: 16px;
-  overflow: hidden;
-  margin-bottom: 4px;
-  border: 1px solid #444;
-}
-
-.switch input[type="radio"] {
-  display: none;
-}
-
-.switch label {
-  flex: 1;
-  text-align: center;
-  font-size: 12px;
-  line-height: 32px;
-  cursor: pointer;
-  z-index: 1;
-  color: #888;
-  font-weight: 500;
-  transition: color 0.2s ease;
-}
-
-.switch input#xec:checked + label {
-  color: #fff;
-}
-
-.switch input#etoken:checked + label {
-  color: #fff;
-}
-
-.switch .toggle {
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 66px;
-  height: 28px;
-  background: #646cff;
-  border-radius: 14px;
-  transition: left 0.3s ease-in-out;
-}
-
-.switch input#etoken:checked ~ .toggle {
-  left: 72px;
-}
+/* Switch styles removed - eToken addresses not used */
 
 .address-display {
   font-size: 12px;

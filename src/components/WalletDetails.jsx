@@ -10,13 +10,7 @@ const WalletDetails = () => {
   const setNotification = useSetAtom(notificationAtom);
   const [wifPrivateKey, setWifPrivateKey] = useState('Converting...');
 
-  // Utility Functions
-  const getETokenAddress = (xecAddress) => {
-    if (!xecAddress || !xecAddress.startsWith('ecash:')) {
-      return 'N/A';
-    }
-    return xecAddress.replace('ecash:', 'etoken:');
-  };
+  // Utility Functions removed - eToken addresses not used
 
 
   // Convert hex to WIF asynchronously using robust conversion
@@ -39,17 +33,12 @@ const WalletDetails = () => {
       // Convert hex format to WIF using robust minimal-xec-wallet implementation
       if (hexPrivateKey && hexPrivateKey.length === 64 && /^[a-fA-F0-9]+$/.test(hexPrivateKey)) {
         try {
-          console.log('🔧 Converting hex to WIF using robust implementation:', hexPrivateKey.substring(0, 10) + '...');
-
           // Use the robust WIF conversion utility
           const wif = hexToWIF(hexPrivateKey, true, false); // compressed, mainnet
           if (wif) {
-            console.log('🔧 Successfully converted to WIF:', wif.substring(0, 10) + '...');
             setWifPrivateKey(wif);
             return;
           }
-
-          console.log('🔧 WIF conversion failed, using hex');
           setWifPrivateKey(hexPrivateKey);
         } catch (error) {
           console.error('🔧 Failed to convert hex to WIF:', error);
@@ -111,7 +100,6 @@ const WalletDetails = () => {
   const walletData = {
     mnemonic: wallet?.walletInfo?.mnemonic || 'N/A',
     xecAddress: wallet?.walletInfo?.xecAddress || wallet?.walletInfo?.address || 'N/A',
-    eTokenAddress: getETokenAddress(wallet?.walletInfo?.xecAddress || wallet?.walletInfo?.address),
     privateKeyWIF: getWIFFromHex(),
     hdPath: wallet?.walletInfo?.hdPath || "m/44'/899'/0'/0/0"
   };
@@ -158,25 +146,6 @@ const WalletDetails = () => {
         </div>
       </div>
 
-      <div className="wallet-detail-item">
-        <span className="wallet-detail-label">eToken Address:</span>
-        <div className="wallet-detail-value-group">
-          <span className="wallet-detail-value">{walletData.eTokenAddress}</span>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              handleCopyClick(walletData.eTokenAddress, 'eToken Address');
-            }}
-            className="wallet-action-button small"
-            title="Copy to clipboard"
-            disabled={walletData.eTokenAddress === 'N/A'}
-          >
-            📋
-          </button>
-        </div>
-      </div>
 
       <div className="wallet-detail-item">
         <span className="wallet-detail-label">Private Key (WIF):</span>

@@ -42,6 +42,10 @@ export const handleError = (error, context = '') => {
       'private key', 'derivation', 'signing failed', 'xec balance',
       'missing inputs', 'inputs-missingorspent'
     ],
+    mempool: [
+      'txn-mempool-conflict', 'mempool conflict', 'utxo conflict',
+      'transaction rejected by mempool', 'already spent'
+    ],
     validation: [
       'invalid address', 'invalid amount', 'validation failed',
       'invalid format', 'invalid token', 'ecash address', 'dust'
@@ -85,6 +89,15 @@ export const handleError = (error, context = '') => {
         userFriendlyMessage = 'Transaction failed due to outdated UTXOs. The wallet will automatically refresh and you can try again.';
       } else {
         userFriendlyMessage = 'Wallet operation failed. Please try again.';
+      }
+      break;
+    case 'mempool':
+      if (lowerMessage.includes('txn-mempool-conflict') || lowerMessage.includes('mempool conflict')) {
+        userFriendlyMessage = 'Transaction conflict detected. UTXOs have been refreshed - please wait a few seconds and try again.';
+      } else if (lowerMessage.includes('already spent')) {
+        userFriendlyMessage = 'UTXOs already spent by another transaction. Wallet data refreshed - please try again.';
+      } else {
+        userFriendlyMessage = 'Transaction rejected by network. Please wait a moment and try again.';
       }
       break;
     case 'validation':

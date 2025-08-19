@@ -9,37 +9,54 @@ const useXecPrice = (refreshInterval = 300000) => { // 5 minutes default
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Fetch XEC price from external APIs
+  // Fetch XEC price using wallet's built-in method with API fallback
   const fetchPrice = useCallback(async () => {
     setLoading(true);
     setError(null);
 
     try {
-      // Try CoinGecko API first
       let xecUsdPrice = 0;
 
-      try {
-        const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ecash&vs_currencies=usd', {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-          },
-        });
+      // Try wallet's getXecUsd method first (from minimal-xec-wallet)
+      if (wallet && typeof wallet.getXecUsd === 'function') {
+        try {
+          xecUsdPrice = await wallet.getXecUsd();
+        } catch (walletError) {
+          console.warn('Wallet price method failed, trying external API:', walletError.message);
 
-        if (response.ok) {
-          const data = await response.json();
-          xecUsdPrice = data?.ecash?.usd || 0;
-        }
-      } catch (apiError) {
-        console.warn('CoinGecko API failed, trying fallback:', apiError.message);
-
-        // Fallback to wallet's getXecUsd method (placeholder)
-        if (wallet) {
+          // Fallback to CoinGecko API if wallet method fails
           try {
-            xecUsdPrice = await wallet.getXecUsd();
-          } catch (walletError) {
-            console.warn('Wallet price method failed:', walletError.message);
+            const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ecash&vs_currencies=usd', {
+              method: 'GET',
+              headers: {
+                'Accept': 'application/json',
+              },
+            });
+
+            if (response.ok) {
+              const data = await response.json();
+              xecUsdPrice = data?.ecash?.usd || 0;
+            }
+          } catch (apiError) {
+            console.warn('CoinGecko API also failed:', apiError.message);
           }
+        }
+      } else {
+        // Wallet not available or doesn't have getXecUsd method, use API directly
+        try {
+          const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ecash&vs_currencies=usd', {
+            method: 'GET',
+            headers: {
+              'Accept': 'application/json',
+            },
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            xecUsdPrice = data?.ecash?.usd || 0;
+          }
+        } catch (apiError) {
+          console.warn('CoinGecko API failed:', apiError.message);
         }
       }
 

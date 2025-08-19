@@ -32,44 +32,32 @@ export const sanitizeInput = (input, context = 'general') => {
  * @returns {boolean} True if valid
  */
 export const isValidXECAddress = (address) => {
-  console.log('🔍 isValidXECAddress called with:', address);
-  console.log('🔍 ecashaddrjs available?', !!ecashaddrjs);
-  console.log('🔍 decodeCashAddress function?', typeof ecashaddrjs?.decodeCashAddress);
-
   try {
     if (!address || typeof address !== 'string') {
-      console.log('❌ Failed: not a string or empty');
       return false;
     }
 
     const sanitized = sanitizeInput(address, 'address');
-    console.log('🧹 After sanitization:', sanitized);
 
     // Allow test addresses in test environment
     if ((import.meta.env?.NODE_ENV === 'test' || import.meta.env?.TEST === 'unit') && sanitized.startsWith('test-')) {
-      console.log('✅ Test address allowed');
       return true;
     }
 
     // Only allow eCash addresses (ecash: prefix)
     if (!sanitized.startsWith('ecash:')) {
-      console.log('❌ Failed: missing ecash: prefix');
       return false;
     }
 
     // Use ecashaddrjs to validate the eCash address cryptographically
-    console.log('🔐 Attempting cryptographic validation...');
     if (!ecashaddrjs || typeof ecashaddrjs.decodeCashAddress !== 'function') {
-      console.log('❌ Failed: ecashaddrjs.decodeCashAddress not available');
       return false;
     }
 
-    const result = ecashaddrjs.decodeCashAddress(sanitized);
-    console.log('✅ Address validation successful!', result);
+    ecashaddrjs.decodeCashAddress(sanitized);
     return true;
-  } catch (error) {
+  } catch {
     // Invalid address format or decode failed
-    console.log('❌ Cryptographic validation failed:', error.message);
     return false;
   }
 };
