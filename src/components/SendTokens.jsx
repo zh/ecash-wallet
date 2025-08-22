@@ -183,11 +183,11 @@ const SendTokens = ({ preSelectedToken = null }) => {
       const divisor = Math.pow(10, selectedToken.decimals || 0);
 
       // Check balance in atoms but use display amount for transaction
-      const amountInAtoms = Math.round(amount * divisor);
-      if (amountInAtoms > tokenBalance) {
+      // const amountInAtoms = Math.round(amount * divisor);
+      if (amount > tokenBalance) {
         setNotification({
           type: 'error',
-          message: `Insufficient token balance. You have ${formatTokenBalance(tokenBalance, selectedToken.decimals)} ${selectedToken.symbol || 'tokens'}.`
+          message: `Insufficient token balance. You have ${tokenBalance} ${selectedToken.symbol || 'tokens'}.`
         });
         return;
       }
