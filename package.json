@@ -1,5 +1,6 @@
 {
   "name": "ecash-wallet",
+  "description": "Minimalistic React eCash wallet",
   "private": true,
   "version": "1.0.0",
   "type": "module",
