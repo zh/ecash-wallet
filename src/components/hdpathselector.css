@@ -1,0 +1,171 @@
+/* HD Path Selector Styles */
+
+.hdpath-selector {
+  margin: 15px 0;
+}
+
+.hdpath-selector.compact {
+  margin: 5px 0;
+}
+
+.hdpath-label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 10px;
+  color: var(--text-primary, #333);
+  font-size: 14px;
+}
+
+.hdpath-select {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color, #ddd);
+  border-radius: 6px;
+  background: var(--bg-secondary, #fff);
+  color: var(--text-primary, #333);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.hdpath-select:focus {
+  outline: none;
+  border-color: var(--primary-color, #0074d9);
+  box-shadow: 0 0 0 2px var(--primary-color-light, rgba(0, 116, 217, 0.2));
+}
+
+.hdpath-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.hdpath-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.hdpath-radio {
+  margin-top: 2px;
+  cursor: pointer;
+}
+
+.hdpath-option-label {
+  flex: 1;
+  cursor: pointer;
+  padding: 8px 4px;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  transition: all 0.2s ease;
+}
+
+.hdpath-option-label:hover {
+  background: var(--bg-hover, rgba(0, 116, 217, 0.03));
+}
+
+.hdpath-radio:checked + .hdpath-option-label {
+  background: var(--primary-color-light, rgba(0, 116, 217, 0.08));
+  border-left: 3px solid var(--primary-color, #0074d9);
+  padding-left: 5px;
+}
+
+.hdpath-option-title {
+  font-weight: 600;
+  color: var(--text-primary, #333);
+  margin-bottom: 4px;
+  font-size: 14px;
+}
+
+.hdpath-option-desc {
+  font-size: 12px;
+  color: var(--text-secondary, #666);
+  margin-bottom: 6px;
+  line-height: 1.4;
+}
+
+.hdpath-value {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 11px;
+  color: var(--text-accent, #0074d9);
+  background: var(--bg-code, #f5f5f5);
+  padding: 2px 6px;
+  border-radius: 3px;
+  display: inline-block;
+}
+
+.hdpath-current {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--text-secondary, #666);
+  text-align: center;
+}
+
+.hdpath-current code {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  background: var(--bg-code, #f5f5f5);
+  padding: 2px 6px;
+  border-radius: 3px;
+  color: var(--text-accent, #0074d9);
+}
+
+/* Dark theme support */
+[data-theme='dark'] .hdpath-option-label {
+  background: transparent;
+  color: var(--text-primary-dark, #e0e0e0);
+}
+
+[data-theme='dark'] .hdpath-option-label:hover {
+  background: var(--bg-hover-dark, rgba(0, 116, 217, 0.08));
+}
+
+[data-theme='dark'] .hdpath-radio:checked + .hdpath-option-label {
+  background: var(--primary-color-light-dark, rgba(0, 116, 217, 0.15));
+  border-left: 3px solid var(--primary-color, #0074d9);
+  padding-left: 5px;
+}
+
+[data-theme='dark'] .hdpath-value,
+[data-theme='dark'] .hdpath-current code {
+  background: var(--bg-code-dark, #333);
+  color: var(--text-accent-dark, #4da6ff);
+}
+
+[data-theme='dark'] .hdpath-select {
+  background: var(--bg-secondary-dark, #2a2a2a);
+  border-color: var(--border-color-dark, #444);
+  color: var(--text-primary-dark, #e0e0e0);
+}
+
+/* Responsive design */
+@media (max-width: 480px) {
+  .hdpath-options {
+    gap: 8px;
+  }
+  
+  .hdpath-option {
+    gap: 3px;
+  }
+  
+  .hdpath-radio {
+    margin-top: 2px;
+  }
+  
+  .hdpath-option-label {
+    padding: 6px 2px;
+  }
+  
+  .hdpath-option-title {
+    font-size: 13px;
+  }
+  
+  .hdpath-option-desc {
+    font-size: 11px;
+  }
+  
+  /* Remove blue left border for selected state in mobile */
+  .hdpath-radio:checked + .hdpath-option-label {
+    border-left: none;
+    padding-left: 2px;
+  }
+}

@@ -30,11 +30,6 @@ const TokenCard = ({
     type = 'Unknown'
   } = token;
 
-  const shortify = (id) => {
-    if (!id || typeof id !== 'string') return 'N/A';
-    return `${id.slice(0, 4)}...${id.slice(-4)}`;
-  };
-
   const formatTokenBalance = (balance) => {
     if (!balance || balance === 0) return '0';
 

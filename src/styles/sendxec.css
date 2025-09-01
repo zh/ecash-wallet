@@ -1,4 +1,8 @@
 /* SendXEC and SendTokens Component Styles */
+select {
+  margin: 10px 0;
+}
+
 .sendxec-container,
 .send-tokens-container {
   max-width: 600px;
@@ -250,6 +254,55 @@
   box-sizing: border-box;
 }
 
+/* Strategy Selection Styles */
+.strategy-label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--text-primary, #333);
+  font-size: 14px;
+}
+
+.strategy-select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border-primary, #e1e5e9);
+  border-radius: 6px;
+  background: var(--input-bg, #f8f9fa);
+  color: var(--text-primary, #333);
+  font-size: 14px;
+  cursor: pointer;
+  margin-bottom: 8px;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.strategy-select:focus {
+  outline: none;
+  border-color: var(--accent-primary, #0074d9);
+  background: var(--input-focus-bg);
+}
+
+.strategy-select:disabled {
+  background: var(--input-disabled-bg);
+  color: var(--input-disabled-text);
+  cursor: not-allowed;
+}
+
+.strategy-description {
+  font-size: 12px;
+  color: var(--text-info, var(--text-secondary, #666));
+  line-height: 1.4;
+  background: var(--bg-info, #e8f4fd);
+  border: 1px solid var(--border-info, #bee5eb);
+  border-radius: 4px;
+  padding: 8px 10px;
+  margin-top: 5px;
+}
+
+.strategy-description p {
+  margin: 0;
+}
+
 /* Mobile responsive design */
 @media (max-width: 600px) {
   .sendxec-container,
@@ -324,6 +377,11 @@
   .error-text {
     text-align: center;
     margin-top: 6px;
+  }
+
+  .strategy-description {
+    font-size: 11px;
+    padding: 6px 8px;
   }
 }
 

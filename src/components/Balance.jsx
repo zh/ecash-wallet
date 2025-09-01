@@ -9,7 +9,7 @@ const Balance = ({ showValue = true }) => {
   // ALL HOOKS MUST BE CALLED FIRST - BEFORE ANY CONDITIONAL RETURNS
   const [walletConnected] = useAtom(walletConnectedAtom);
   const [wallet] = useAtom(walletAtom);
-  const { balance, error: balanceError, loading } = useBalance();
+  const { balance, balanceBreakdown, error: balanceError, loading } = useBalance();
   const { price, error: priceError } = useXecPrice();
 
   // wallet.getXecBalance() already returns XEC units (not base units)
@@ -82,13 +82,18 @@ const Balance = ({ showValue = true }) => {
         </div>
       )}
 
-      {/* Additional wallet info for debugging */}
-      {!loading && wallet && (
-        <div className="balance-secondary" style={{ marginTop: '8px', fontSize: '12px', opacity: 0.7 }}>
-          {wallet.walletInfo?.xecAddress ?
-            `Address: ${wallet.walletInfo.xecAddress.slice(0, 12)}...` :
-            'Address loading...'
-          }
+      {/* Balance breakdown when token UTXOs are present */}
+      {!loading && balanceBreakdown && balanceBreakdown.tokenUtxos > 0 && (
+        <div className="balance-breakdown" style={{ marginTop: '8px', fontSize: '11px', opacity: 0.8 }}>
+          <div className="breakdown-item">
+            <span>Spendable: {balanceBreakdown.spendableBalance.toFixed(2)} XEC</span>
+          </div>
+          <div className="breakdown-item">
+            <span>Token Dust: {balanceBreakdown.tokenDustValue.toFixed(2)} XEC</span>
+          </div>
+          <div className="breakdown-item">
+            <span>Total: {balanceBreakdown.totalBalance.toFixed(2)} XEC</span>
+          </div>
         </div>
       )}
     </div>

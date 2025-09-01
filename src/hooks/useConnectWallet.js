@@ -1,17 +1,47 @@
 // src/hooks/useConnectWallet.js
 import { useAtom } from 'jotai';
-import { mnemonicAtom, optionsAtom, walletConnectedAtom, walletAtom } from '../atoms';
+import { optionsAtom, walletConnectedAtom, walletAtom, mnemonicSetterAtom } from '../atoms';
 
 const useConnectWallet = () => {
-  const [mnemonic] = useAtom(mnemonicAtom);
   const [options] = useAtom(optionsAtom);
   const [walletConnected, setWalletConnected] = useAtom(walletConnectedAtom);
   const [, setWallet] = useAtom(walletAtom);
+  const [, setSavedMnemonic] = useAtom(mnemonicSetterAtom);
 
-  const connectWallet = async () => {
+  // Create new wallet (let library generate mnemonic internally)
+  const createWallet = async () => {
+    try {
+      if (!window.MinimalXecWallet) {
+        throw new Error('XEC wallet library is not available.');
+      }
+
+      const XecLibrary = window.MinimalXecWallet;
+      // Pass null as first parameter to let library generate mnemonic
+      const xecWallet = new XecLibrary(null, options);
+
+      // Initialize the wallet
+      await xecWallet.initialize();
+
+      // Save the generated mnemonic for backup
+      const mnemonic = xecWallet.walletInfo?.mnemonic;
+      if (mnemonic) {
+        setSavedMnemonic(mnemonic);
+      }
+
+      setWallet(xecWallet);
+      setWalletConnected(true);
+    } catch (error) {
+      setWallet(null);
+      setWalletConnected(false);
+      throw new Error(error.message);
+    }
+  };
+
+  // Import existing wallet from mnemonic
+  const importWallet = async (mnemonic) => {
     try {
       if (!mnemonic.trim()) {
-        throw new Error('Mnemonic is required to initialize wallet.');
+        throw new Error('Mnemonic is required to import wallet.');
       }
 
       if (!window.MinimalXecWallet) {
@@ -19,10 +49,13 @@ const useConnectWallet = () => {
       }
 
       const XecLibrary = window.MinimalXecWallet;
-      const xecWallet = new XecLibrary(mnemonic, options);
+      const xecWallet = new XecLibrary(mnemonic.trim(), options);
 
       // Initialize the wallet
       await xecWallet.initialize();
+
+      // Save the imported mnemonic
+      setSavedMnemonic(mnemonic.trim());
 
       setWallet(xecWallet);
       setWalletConnected(true);
@@ -36,11 +69,30 @@ const useConnectWallet = () => {
   const disconnectWallet = () => {
     setWallet(null);
     setWalletConnected(false);
+    // Note: We keep the mnemonic saved for easy reconnection
+    // Users can explicitly clear it using the Reset button in the UI
+  };
+
+  const clearWalletData = () => {
+    setWallet(null);
+    setWalletConnected(false);
+    setSavedMnemonic(''); // This will clear the localStorage via the utility
+
+    // Clear any other wallet-related localStorage data but preserve user preferences
+    const keysToPreserve = ['ecash-derivation-mode', 'ecash-wallet-theme', 'ecash-wallet-mnemonic'];
+    const allKeys = Object.keys(localStorage);
+    allKeys.forEach(key => {
+      if (key.startsWith('ecash-') && !keysToPreserve.includes(key)) {
+        localStorage.removeItem(key);
+      }
+    });
   };
 
   return {
-    connectWallet,
+    createWallet,
+    importWallet,
     disconnectWallet,
+    clearWalletData,
     walletConnected,
   };
 };

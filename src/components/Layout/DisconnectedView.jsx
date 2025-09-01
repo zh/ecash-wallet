@@ -1,7 +1,6 @@
 import LoadScript from '../LoadScript';
-import Mnemonic from '../Mnemonic';
 import Notification from '../Notification';
-import Wallet from '../Wallet';
+import ECashWallet from '../ECashWallet';
 import ThemeToggle from '../ThemeToggle';
 import { useAtom } from 'jotai';
 import { scriptLoadedAtom, scriptErrorAtom } from '../../atoms';
@@ -50,10 +49,7 @@ const DisconnectedView = () => {
         )}
 
         {scriptLoaded && (
-          <>
-            <Mnemonic />
-            <Wallet />
-          </>
+          <ECashWallet />
         )}
       </div>
 

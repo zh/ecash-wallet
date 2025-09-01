@@ -1,14 +1,74 @@
 import { atom } from 'jotai';
+import { loadMnemonic, saveMnemonic } from './utils/mnemonicStorage';
 
-// XEC wallet options - uses Chronik (no server selection needed)
-export const optionsAtom = atom({
-  // minimal-xec-wallet handles Chronik connection internally
-  noUpdate: true,
+// HD derivation path atoms - create a writable atom with localStorage persistence
+const getInitialDerivationMode = () => {
+  if (typeof window !== 'undefined') {
+    const saved = localStorage.getItem('ecash-derivation-mode');
+    return saved || 'standard';
+  }
+  return 'standard';
+};
+
+const _derivationModeAtom = atom(getInitialDerivationMode());
+
+export const derivationModeAtom = atom(
+  (get) => get(_derivationModeAtom),
+  (get, set, newMode) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('ecash-derivation-mode', newMode);
+    }
+    set(_derivationModeAtom, newMode);
+  }
+);
+derivationModeAtom.debugLabel = 'derivationModeAtom';
+
+export const hdPathAtom = atom((get) => {
+  const mode = get(derivationModeAtom);
+  return mode === 'cashtab' ? "m/44'/1899'/0'/0/0" : "m/44'/899'/0'/0/0";
+});
+hdPathAtom.debugLabel = 'hdPathAtom';
+
+
+// Analytics options atom for wallet health and analytics features
+export const analyticsEnabledAtom = atom(true);
+analyticsEnabledAtom.debugLabel = 'analyticsEnabledAtom';
+
+// XEC wallet options - includes HD path and analytics configuration
+export const optionsAtom = atom((get) => {
+  const hdPath = get(hdPathAtom);
+  const analyticsEnabled = get(analyticsEnabledAtom);
+
+  return {
+    hdPath,
+    // Enable analytics features for health monitoring and UTXO classification
+    utxoAnalytics: analyticsEnabled ? {
+      enabled: true,
+      classificationConfig: {
+        ageThresholds: {
+          mature: 144,     // 24 hours at 10-minute blocks
+          old: 1008        // 1 week at 10-minute blocks
+        },
+        valueThresholds: {
+          dust: 546,       // BCH dust limit
+          small: 10000,    // 0.1 XEC
+          medium: 100000   // 1 XEC
+        }
+      },
+      healthMonitorConfig: {
+        dustThreshold: 546,
+        alertThresholds: {
+          dust: 0.1,       // Alert if >10% dust UTXOs
+          privacy: 50      // Alert if >50 UTXOs (privacy concern)
+        }
+      }
+    } : undefined,
+    // minimal-xec-wallet handles Chronik connection internally
+    noUpdate: true,
+  };
 });
 optionsAtom.debugLabel = 'optionsAtom';
 
-export const mnemonicAtom = atom('');
-mnemonicAtom.debugLabel = 'mnemonicAtom';
 
 export const walletConnectedAtom = atom(false);
 walletConnectedAtom.debugLabel = 'walletConnectedAtom';
@@ -26,8 +86,23 @@ export const priceAtom = atom(0);
 priceAtom.debugLabel = 'priceAtom';
 
 // XEC balance (in XEC units - 2 decimal places, from wallet.getXecBalance())
+// Spendable balance (pure XEC only, excludes token dust)
 export const balanceAtom = atom(0);
 balanceAtom.debugLabel = 'balanceAtom';
+
+// Total balance (all UTXOs including token dust)
+export const totalBalanceAtom = atom(0);
+totalBalanceAtom.debugLabel = 'totalBalanceAtom';
+
+// Balance breakdown for detailed display
+export const balanceBreakdownAtom = atom({
+  spendableBalance: 0,
+  totalBalance: 0,
+  tokenDustValue: 0,
+  pureXecUtxos: 0,
+  tokenUtxos: 0
+});
+balanceBreakdownAtom.debugLabel = 'balanceBreakdownAtom';
 
 // Refresh trigger atoms
 export const balanceRefreshTriggerAtom = atom(0);
@@ -87,3 +162,31 @@ export const themeSetterAtom = atom(null, (get, set, newTheme) => {
   }
 });
 themeSetterAtom.debugLabel = 'themeSetterAtom';
+
+// Wallet health and analytics atoms
+export const walletHealthAtom = atom(null);
+walletHealthAtom.debugLabel = 'walletHealthAtom';
+
+export const utxoClassificationsAtom = atom(null);
+utxoClassificationsAtom.debugLabel = 'utxoClassificationsAtom';
+
+export const securityThreatsAtom = atom(null);
+securityThreatsAtom.debugLabel = 'securityThreatsAtom';
+
+export const coinSelectionStrategyAtom = atom('efficient');
+coinSelectionStrategyAtom.debugLabel = 'coinSelectionStrategyAtom';
+
+// Saved mnemonic atom with localStorage persistence for wallet restoration
+const getInitialMnemonic = () => {
+  return loadMnemonic();
+};
+
+export const savedMnemonicAtom = atom(getInitialMnemonic());
+savedMnemonicAtom.debugLabel = 'savedMnemonicAtom';
+
+// Mnemonic setter atom that also persists to localStorage
+export const mnemonicSetterAtom = atom(null, (get, set, newMnemonic) => {
+  set(savedMnemonicAtom, newMnemonic);
+  saveMnemonic(newMnemonic);
+});
+mnemonicSetterAtom.debugLabel = 'mnemonicSetterAtom';

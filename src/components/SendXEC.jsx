@@ -7,7 +7,8 @@ import {
   balanceAtom,
   walletAtom,
   walletConnectedAtom,
-  balanceRefreshTriggerAtom
+  balanceRefreshTriggerAtom,
+  coinSelectionStrategyAtom
 } from '../atoms';
 import QrCodeScanner from './QrCodeScanner';
 import { useXecPrice } from '../hooks';
@@ -22,6 +23,7 @@ const SendXEC = () => {
   const setNotification = useSetAtom(notificationAtom);
   const [busy, setBusy] = useAtom(busyAtom);
   const setBalanceRefreshTrigger = useSetAtom(balanceRefreshTriggerAtom);
+  const [coinSelectionStrategy, setCoinSelectionStrategy] = useAtom(coinSelectionStrategyAtom);
   const { price: xecUsdPrice } = useXecPrice();
 
   const [sendForm, setSendForm] = useState({
@@ -94,6 +96,74 @@ const SendXEC = () => {
       default:
         // Amount is already in XEC units
         return numAmount;
+    }
+  };
+
+  // Validate UTXO safety for token-aware sending
+  const validateUtxoSafety = async (wallet, xecAmount, strategy) => {
+    try {
+      if (!wallet.utxos || !wallet.utxos.utxoStore || !wallet.utxos.utxoStore.xecUtxos) {
+        // No UTXOs available - let the transaction fail naturally
+        return;
+      }
+
+      const utxos = wallet.utxos.utxoStore.xecUtxos;
+      let pureXecUtxos = [];
+      let tokenUtxos = [];
+      let totalPureXecValue = 0;
+
+      // Classify UTXOs with token awareness
+      for (const utxo of utxos) {
+        const hasToken = utxo.token && utxo.token.tokenId;
+        const utxoXecValue = (utxo.value || utxo.sats || 0) / 100; // Convert to XEC
+
+        if (hasToken) {
+          tokenUtxos.push(utxo);
+        } else {
+          pureXecUtxos.push(utxo);
+          totalPureXecValue += utxoXecValue;
+        }
+      }
+
+      // Token-aware safety validation
+      if (tokenUtxos.length > 0) {
+        if (pureXecUtxos.length === 0) {
+          throw new Error(
+            `Cannot send XEC: All ${utxos.length} UTXOs contain tokens. ` +
+            'To send XEC, first receive pure XEC or consider using token-specific sending methods.'
+          );
+        }
+
+        const lockedInTokens = (tokenUtxos.length * 5.46).toFixed(2); // 546 sats = 5.46 XEC each
+
+        if (totalPureXecValue < xecAmount) {
+          throw new Error(
+            `Insufficient pure XEC for transaction. Need ${xecAmount.toFixed(2)} XEC, ` +
+            `but only have ${totalPureXecValue.toFixed(2)} XEC available for spending. ` +
+            `${lockedInTokens} XEC is locked in ${tokenUtxos.length} token UTXOs.`
+          );
+        }
+
+        // Provide information about token protection
+        if (strategy === 'security' && tokenUtxos.length > 10) {
+          console.log(`Security note: ${tokenUtxos.length} token UTXOs are protected from this XEC transaction.`);
+        }
+      }
+
+      // Strategy-specific validation
+      if (strategy === 'security' && pureXecUtxos.some(utxo => (utxo.value || utxo.sats || 0) < 1000)) {
+        const dustCount = pureXecUtxos.filter(utxo => (utxo.value || utxo.sats || 0) < 1000).length;
+        if (dustCount > 5) {
+          console.warn(`Security warning: Wallet contains ${dustCount} dust UTXOs. Consider consolidation.`);
+        }
+      }
+
+      if (strategy === 'privacy' && pureXecUtxos.length < 3) {
+        console.warn('Privacy note: Limited pure XEC UTXOs may reduce privacy options.');
+      }
+
+    } catch (error) {
+      throw new Error(`Transaction safety validation failed: ${error.message}`);
     }
   };
 
@@ -196,6 +266,9 @@ const SendXEC = () => {
           // Refresh wallet UTXOs before sending to get fresh data
           await wallet.initialize();
 
+          // Perform token-aware UTXO validation
+          await validateUtxoSafety(wallet, xecAmount, coinSelectionStrategy);
+
           // Authoritative balance check with fresh UTXO data using CLI pattern
           const balanceData = await wallet.getDetailedBalance();
           const freshBalance = balanceData.total;
@@ -214,9 +287,19 @@ const SendXEC = () => {
             amount: satoshis
           }];
 
-          // Use CLI's exact send method
-          const txid = await wallet.sendXec(outputs);
-          return txid;
+          // Use strategy-based sending if supported
+          if (coinSelectionStrategy !== 'efficient' && wallet.sendXecWithStrategy && typeof wallet.sendXecWithStrategy === 'function') {
+            const strategyOptions = {
+              strategy: coinSelectionStrategy,
+              feeRate: 1.0
+            };
+            const txid = await wallet.sendXecWithStrategy(outputs, strategyOptions);
+            return txid;
+          } else {
+            // Use CLI's exact send method
+            const txid = await wallet.sendXec(outputs);
+            return txid;
+          }
         },
         'send_xec'
       );
@@ -327,6 +410,32 @@ const SendXEC = () => {
             </div>
             <div className="balance-info">
               Available: {formatBalance(balance || 0, sendForm.unit)} {sendForm.unit.toUpperCase()}
+            </div>
+          </div>
+
+          {/* Coin Selection Strategy */}
+          <div className="send-group">
+            <label className="strategy-label">Transaction Strategy:</label>
+            <select
+              value={coinSelectionStrategy}
+              onChange={(e) => setCoinSelectionStrategy(e.target.value)}
+              disabled={busy}
+              className="strategy-select"
+            >
+              <option value="efficient">Efficient (Minimize fees)</option>
+              <option value="privacy">Privacy (Reduce traceability)</option>
+              <option value="security">Security (Avoid problematic UTXOs)</option>
+            </select>
+            <div className="strategy-description">
+              {coinSelectionStrategy === 'efficient' && (
+                <p>Optimizes for lowest transaction fees and best UTXO consolidation.</p>
+              )}
+              {coinSelectionStrategy === 'privacy' && (
+                <p>Minimizes address linking and improves transaction privacy.</p>
+              )}
+              {coinSelectionStrategy === 'security' && (
+                <p>Avoids dust and potentially problematic UTXOs for maximum security.</p>
+              )}
             </div>
           </div>
 

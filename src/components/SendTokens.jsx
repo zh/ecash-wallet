@@ -7,7 +7,9 @@ import {
   eTokensAtom,
   notificationAtom,
   busyAtom,
-  balanceRefreshTriggerAtom
+  balanceRefreshTriggerAtom,
+  coinSelectionStrategyAtom,
+  balanceBreakdownAtom
 } from '../atoms';
 import QrCodeScanner from './QrCodeScanner';
 import { sanitizeInput, isValidXECAddress, isValidAmount, isValidTokenId } from '../utils/validation';
@@ -21,6 +23,8 @@ const SendTokens = ({ preSelectedToken = null }) => {
   const setNotification = useSetAtom(notificationAtom);
   const [busy, setBusy] = useAtom(busyAtom);
   const setBalanceRefreshTrigger = useSetAtom(balanceRefreshTriggerAtom);
+  const [strategy, setStrategy] = useAtom(coinSelectionStrategyAtom);
+  const [balanceBreakdown] = useAtom(balanceBreakdownAtom);
 
   const [sendForm, setSendForm] = useState({
     tokenId: '',
@@ -180,16 +184,41 @@ const SendTokens = ({ preSelectedToken = null }) => {
       }
 
       const tokenBalance = selectedToken.balance || 0;
-      const divisor = Math.pow(10, selectedToken.decimals || 0);
 
-      // Check balance in atoms but use display amount for transaction
-      // const amountInAtoms = Math.round(amount * divisor);
+      // Check balance - using display amount for comparison
       if (amount > tokenBalance) {
         setNotification({
           type: 'error',
           message: `Insufficient token balance. You have ${tokenBalance} ${selectedToken.symbol || 'tokens'}.`
         });
         return;
+      }
+
+      // Check if we have enough spendable XEC for transaction fees
+      const spendableXEC = balanceBreakdown?.spendableBalance || 0;
+      const totalBalance = balanceBreakdown?.totalBalance || 0;
+      const tokenDustValue = balanceBreakdown?.tokenDustValue || 0;
+      const estimatedFee = 0.02; // More conservative estimate for token transactions
+
+      console.log('Fee check:', {
+        spendableXEC,
+        estimatedFee,
+        totalBalance,
+        tokenDustValue,
+        pureXecUtxos: balanceBreakdown?.pureXecUtxos || 0,
+        tokenUtxos: balanceBreakdown?.tokenUtxos || 0
+      });
+
+      // Only warn if we have very little spendable XEC
+      // The actual transaction may succeed if token UTXOs have enough dust
+      if (spendableXEC < estimatedFee && totalBalance < estimatedFee) {
+        setNotification({
+          type: 'error',
+          message: `Insufficient XEC for transaction fees. Need at least ${estimatedFee} XEC for token transactions, but only have ${totalBalance.toFixed(2)} XEC total. Please send more XEC to this address.`
+        });
+        return;
+      } else if (spendableXEC < estimatedFee) {
+        console.warn(`Low spendable XEC (${spendableXEC.toFixed(2)} XEC), but ${tokenDustValue.toFixed(2)} XEC is available in token UTXOs. Attempting transaction...`);
       }
 
       setBusy(true);
@@ -219,13 +248,21 @@ const SendTokens = ({ preSelectedToken = null }) => {
             amount: amount // Use display amount, not atoms
           }];
 
-          // Try wallet.sendETokens with fee rate (primary method from CLI)
+          // Try wallet.sendETokens with fee rate and strategy (primary method from CLI)
           let txid;
           try {
-            txid = await wallet.sendETokens(sanitizedTokenId, outputs, 2.0);
+            const sendOptions = {
+              feeRate: 2.0,
+              coinSelectionStrategy: strategy
+            };
+            txid = await wallet.sendETokens(sanitizedTokenId, outputs, sendOptions);
           } catch {
 
-            // Fallback to hybridTokens.sendTokens (CLI pattern)
+            // Fallback to hybridTokens.sendTokens with strategy (CLI pattern)
+            const sendOptions = {
+              feeRate: 2.0,
+              coinSelectionStrategy: strategy
+            };
             txid = await wallet.hybridTokens.sendTokens(
               sanitizedTokenId,
               outputs,
@@ -237,7 +274,7 @@ const SendTokens = ({ preSelectedToken = null }) => {
                 publicKey: wallet.walletInfo.publicKey
               },
               wallet.utxos.utxoStore.xecUtxos,
-              2.0
+              sendOptions.feeRate
             );
           }
 
@@ -267,6 +304,63 @@ const SendTokens = ({ preSelectedToken = null }) => {
 
     } catch (error) {
       console.error('Token transaction failed:', error);
+
+      // More specific error analysis for WASM-related issues
+      if (error.message?.includes('wbindgen') ||
+          error.message?.includes('WebAssembly') ||
+          error.message?.includes('WASM') ||
+          error.message?.includes('function import requires a callable')) {
+        setNotification({
+          message: 'Transaction failed due to browser compatibility issues. Please refresh the page and try again.',
+          type: 'error'
+        });
+        setBusy(false);
+        return;
+      }
+
+      // Check for specific fee/balance related errors
+      if (error.message?.includes('Insufficient XEC for transaction fees') ||
+          error.message?.includes('insufficient funds') ||
+          error.message?.includes('Not enough XEC')) {
+
+        // If the error message contains our detailed explanation, use it directly
+        if (error.message?.includes('Send some pure XEC') ||
+            error.message?.includes('consolidate existing UTXOs') ||
+            error.message?.includes('Send more XEC to this address')) {
+          setNotification({
+            message: `Transaction failed: ${error.message}`,
+            type: 'error'
+          });
+        } else {
+          // Fallback to our custom message
+          const spendableXEC = balanceBreakdown?.spendableBalance || 0;
+          const tokenDustValue = balanceBreakdown?.tokenDustValue || 0;
+
+          setNotification({
+            message: `Transaction failed due to insufficient XEC for fees. You have ${spendableXEC.toFixed(2)} spendable XEC${tokenDustValue > 0 ? ` (plus ${tokenDustValue.toFixed(2)} XEC locked in token UTXOs)` : ''}. Try sending some pure XEC to this address or consolidating your UTXOs.`,
+            type: 'error'
+          });
+        }
+
+        // Trigger balance refresh to get fresh UTXO data
+        setBalanceRefreshTrigger(Date.now());
+        setBusy(false);
+        return;
+      }
+
+      // Check for specific crypto/signing failures that might be WASM-related
+      if (error.message?.includes('signing') ||
+          error.message?.includes('crypto') ||
+          error.message?.includes('hash') ||
+          error.message?.includes('Unable to sign')) {
+        setNotification({
+          message: 'Transaction signing failed. This may be due to browser compatibility. Please refresh and try again.',
+          type: 'error'
+        });
+        setBusy(false);
+        return;
+      }
+
       const handledError = handleError(error, 'send_tokens');
 
       // If error is related to mempool conflicts or UTXO issues, trigger balance refresh
@@ -424,6 +518,32 @@ const SendTokens = ({ preSelectedToken = null }) => {
               Available: {selectedToken.balance} {selectedToken.symbol}
             </div>
           )}
+        </div>
+
+        {/* Coin Selection Strategy */}
+        <div className="form-group">
+          <label className="strategy-label">Transaction Strategy:</label>
+          <select
+            value={strategy}
+            onChange={(e) => setStrategy(e.target.value)}
+            disabled={busy}
+            className="strategy-select"
+          >
+            <option value="efficient">Efficient (Minimize fees)</option>
+            <option value="privacy">Privacy (Reduce traceability)</option>
+            <option value="security">Security (Avoid problematic UTXOs)</option>
+          </select>
+          <div className="strategy-description">
+            {strategy === 'efficient' && (
+              <p>Optimizes for lowest transaction fees and best UTXO consolidation.</p>
+            )}
+            {strategy === 'privacy' && (
+              <p>Minimizes address linking and improves transaction privacy.</p>
+            )}
+            {strategy === 'security' && (
+              <p>Avoids dust and potentially problematic UTXOs for maximum security.</p>
+            )}
+          </div>
         </div>
 
         {/* Send Button */}

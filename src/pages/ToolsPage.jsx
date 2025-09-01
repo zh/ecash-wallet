@@ -2,6 +2,7 @@ import { useState } from 'react';
 import MobileLayout from '../components/Layout/MobileLayout';
 import WalletDetails from '../components/WalletDetails';
 import SweepXEC from '../components/SweepXEC';
+import WalletHealth from '../components/WalletHealth';
 import { useAtom } from 'jotai';
 import { walletConnectedAtom } from '../atoms';
 import '../styles/tools.css';
@@ -42,6 +43,18 @@ const ToolsPage = () => {
             </div>
             <div className="section-content">
               <SweepXEC />
+            </div>
+          </div>
+        )}
+
+        {/* 3. Wallet Health & Analytics - Always Open */}
+        {walletConnected && (
+          <div className="tool-section">
+            <div className="section-header">
+              <h2>Wallet Health & Analytics</h2>
+            </div>
+            <div className="section-content">
+              <WalletHealth />
             </div>
           </div>
         )}

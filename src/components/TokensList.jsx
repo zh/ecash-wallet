@@ -185,7 +185,7 @@ const TokensList = () => {
           className="refresh-button"
           disabled={refreshing || busy}
         >
-          {refreshing ? 'Refreshing...' : '🔄 Refresh'}
+          {refreshing ? 'Refreshing...' : 'Refresh'}
         </button>
       </div>
 

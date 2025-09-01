@@ -30,6 +30,16 @@
   --accent-warning: #ffc107;
   --accent-info: #2196f3;
   
+  /* Message Box Light/Dark Colors */
+  --success-light: #d4edda;
+  --success-dark: #155724;
+  --warning-light: #fff3cd;
+  --warning-dark: #856404;
+  --error-light: #f8d7da;
+  --error-dark: #721c24;
+  --info-light: #d1ecf1;
+  --info-dark: #0c5460;
+  
   /* Component Specific */
   --button-bg: var(--bg-tertiary);
   --button-border: var(--border-primary);
@@ -135,6 +145,33 @@
   --notification-info-bg: rgba(33, 150, 243, 0.2);
   --notification-info-border: #2196f3;
   --notification-info-text: #64b5f6;
+  
+  /* Message Box Colors (Info, Warning, Success, Error) */
+  --bg-info: rgba(33, 150, 243, 0.15);
+  --border-info: rgba(33, 150, 243, 0.3);
+  --text-info: #90caf9;
+  
+  --bg-warning: rgba(255, 193, 7, 0.15);
+  --border-warning: rgba(255, 193, 7, 0.3);
+  --text-warning: #ffcc02;
+  
+  --bg-success: rgba(76, 175, 80, 0.15);
+  --border-success: rgba(76, 175, 80, 0.3);
+  --text-success: #a5d6a7;
+  
+  --bg-error: rgba(244, 67, 54, 0.15);
+  --border-error: rgba(244, 67, 54, 0.3);
+  --text-error: #ef9a9a;
+  
+  /* Message Box Light/Dark Colors (Dark Theme Override) */
+  --success-light: var(--bg-success);
+  --success-dark: var(--text-success);
+  --warning-light: var(--bg-warning);
+  --warning-dark: var(--text-warning);
+  --error-light: var(--bg-error);
+  --error-dark: var(--text-error);
+  --info-light: var(--bg-info);
+  --info-dark: var(--text-info);
 }
 
 /* Theme Transition */

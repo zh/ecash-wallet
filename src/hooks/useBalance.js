@@ -4,6 +4,8 @@ import {
   walletAtom,
   walletConnectedAtom,
   balanceAtom,
+  totalBalanceAtom,
+  balanceBreakdownAtom,
   balanceRefreshTriggerAtom,
 } from '../atoms';
 
@@ -11,6 +13,8 @@ const useBalance = (refreshInterval = 10000) => {
   const [wallet] = useAtom(walletAtom);
   const [walletConnected] = useAtom(walletConnectedAtom);
   const [balance, setBalance] = useAtom(balanceAtom);
+  const [totalBalance, setTotalBalance] = useAtom(totalBalanceAtom);
+  const [balanceBreakdown, setBalanceBreakdown] = useAtom(balanceBreakdownAtom);
   const [triggerRefresh] = useAtom(balanceRefreshTriggerAtom);
 
   const [loading, setLoading] = useState(false);
@@ -23,7 +27,16 @@ const useBalance = (refreshInterval = 10000) => {
     setError(null);
 
     if (!wallet || !walletConnected) {
-      setBalance(0); // Reset to 0 if wallet is not available
+      // Reset all balance atoms if wallet is not available
+      setBalance(0);
+      setTotalBalance(0);
+      setBalanceBreakdown({
+        spendableBalance: 0,
+        totalBalance: 0,
+        tokenDustValue: 0,
+        pureXecUtxos: 0,
+        tokenUtxos: 0
+      });
       setLoading(false);
       return;
     }
@@ -42,12 +55,16 @@ const useBalance = (refreshInterval = 10000) => {
       const balanceData = await wallet.getDetailedBalance();
       let spendableBalance = balanceData.total; // Start with total balance
 
-      // Calculate spendable balance by subtracting eToken dust (CLI pattern)
+      // Calculate both spendable and total balances with detailed breakdown
       if (wallet.utxos && wallet.utxos.utxoStore && wallet.utxos.utxoStore.xecUtxos) {
         const utxos = wallet.utxos.utxoStore.xecUtxos;
         let pureXecTotal = 0;
+        let totalUtxoValue = 0;
+        let tokenDustValue = 0;
+        let pureXecCount = 0;
+        let tokenUtxoCount = 0;
 
-        // Use exact CLI filtering logic
+        // Process each UTXO to separate spendable XEC from token dust
         for (const utxo of utxos) {
           // Get XEC amount using CLI's method - prefer sats property
           let xecAmount = 0;
@@ -59,17 +76,36 @@ const useBalance = (refreshInterval = 10000) => {
             xecAmount = satoshis / 100; // Convert from satoshis to XEC
           }
 
-          // Use CLI's exact token detection logic
+          // Add to total balance (includes all UTXOs)
+          totalUtxoValue += xecAmount;
+
+          // Separate pure XEC from token dust
           if (utxo.token && utxo.token.tokenId) {
-            // This UTXO is locked with tokens (eToken dust) - skip it
+            // This UTXO is locked with tokens (eToken dust)
+            tokenDustValue += xecAmount;
+            tokenUtxoCount++;
           } else {
             // This is pure XEC UTXO (spendable)
             pureXecTotal += xecAmount;
+            pureXecCount++;
           }
         }
 
-        // Use the calculated pure XEC total (excludes eToken dust)
+        // Use the calculated values
         spendableBalance = pureXecTotal;
+        const totalBalance = totalUtxoValue;
+
+        // Update balance breakdown atom
+        setBalanceBreakdown({
+          spendableBalance,
+          totalBalance,
+          tokenDustValue,
+          pureXecUtxos: pureXecCount,
+          tokenUtxos: tokenUtxoCount
+        });
+
+        // Update total balance atom
+        setTotalBalance(totalBalance);
       }
 
       const xecBalance = spendableBalance;
@@ -88,13 +124,23 @@ const useBalance = (refreshInterval = 10000) => {
     } catch (error) {
       console.error('Failed to fetch XEC balance:', error);
       setError(error.message);
-      setBalance(0); // Reset to 0 in case of an error
+
+      // Reset all balance atoms in case of an error
+      setBalance(0);
+      setTotalBalance(0);
+      setBalanceBreakdown({
+        spendableBalance: 0,
+        totalBalance: 0,
+        tokenDustValue: 0,
+        pureXecUtxos: 0,
+        tokenUtxos: 0
+      });
 
       // Don't disconnect wallet on balance fetch errors - just log and continue
     } finally {
       setLoading(false);
     }
-  }, [wallet, walletConnected, setBalance]);
+  }, [wallet, walletConnected, setBalance, setTotalBalance, setBalanceBreakdown]);
 
   useEffect(() => {
     if (walletConnected) {
@@ -111,7 +157,14 @@ const useBalance = (refreshInterval = 10000) => {
     }
   }, [triggerRefresh, walletConnected, fetchBalance]);
 
-  return { balance, loading, error, refreshBalance: fetchBalance };
+  return {
+    balance,
+    totalBalance,
+    balanceBreakdown,
+    loading,
+    error,
+    refreshBalance: fetchBalance
+  };
 };
 
 export default useBalance;

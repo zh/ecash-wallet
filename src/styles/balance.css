@@ -165,3 +165,34 @@
     font-size: 13px;
   }
 }
+
+/* Balance breakdown styles */
+.balance-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 8px;
+  padding: 8px;
+  background: var(--bg-secondary, #f8f9fa);
+  border-radius: 6px;
+  border: 1px solid var(--border-primary, #e1e5e9);
+}
+
+.breakdown-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.breakdown-item span {
+  font-size: 11px;
+  color: var(--text-secondary, #666);
+}
+
+@media (max-width: 600px) {
+  .balance-breakdown {
+    font-size: 10px;
+    padding: 6px;
+    gap: 1px;
+  }
+}
