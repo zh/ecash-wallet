@@ -2,6 +2,7 @@ import { useState } from 'react';
 import MobileLayout from '../components/Layout/MobileLayout';
 import WalletDetails from '../components/WalletDetails';
 import SweepXEC from '../components/SweepXEC';
+import SignVerifyMsg from '../components/SignVerifyMsg';
 import WalletHealth from '../components/WalletHealth';
 import { useAtom } from 'jotai';
 import { walletConnectedAtom } from '../atoms';
@@ -47,7 +48,19 @@ const ToolsPage = () => {
           </div>
         )}
 
-        {/* 3. Wallet Health & Analytics - Always Open */}
+        {/* 3. Sign & Verify Messages - Always Open */}
+        {walletConnected && (
+          <div className="tool-section">
+            <div className="section-header">
+              <h2>Sign & Verify Messages</h2>
+            </div>
+            <div className="section-content">
+              <SignVerifyMsg />
+            </div>
+          </div>
+        )}
+
+        {/* 4. Wallet Health & Analytics - Always Open */}
         {walletConnected && (
           <div className="tool-section">
             <div className="section-header">
