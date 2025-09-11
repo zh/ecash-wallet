@@ -50,6 +50,65 @@
   margin-bottom: 20px;
 }
 
+/* Mnemonic Header (Collapsible) */
+.mnemonic-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--text-primary, #333);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 8px 4px;
+  border-radius: 6px;
+  transition: background-color 0.2s ease;
+  user-select: none;
+}
+
+.mnemonic-header:hover {
+  background-color: var(--bg-hover, #f0f0f0);
+}
+
+.mnemonic-header:focus {
+  outline: 2px solid var(--primary-color, #0074d9);
+  outline-offset: 2px;
+}
+
+.triangle {
+  font-size: 12px;
+  transition: transform 0.2s ease;
+  color: var(--text-secondary, #666);
+  display: inline-block;
+  min-width: 12px;
+}
+
+.triangle.collapsed {
+  transform: rotate(-90deg);
+}
+
+.triangle.expanded {
+  transform: rotate(0deg);
+}
+
+.mnemonic-title {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.mnemonic-subtitle {
+  font-weight: 400;
+  color: var(--text-secondary, #666);
+  font-size: 12px;
+}
+
+/* Mnemonic Content (Collapsible) */
+.mnemonic-content {
+  overflow: hidden;
+  transition: max-height 0.3s ease, opacity 0.3s ease;
+}
+
 .mnemonic-section label {
   display: block;
   font-weight: 600;
@@ -279,6 +338,23 @@
   background: var(--bg-success-dark, #0a2e1a);
   border-color: var(--border-success-dark, #1e5233);
   color: var(--text-success-dark, #4caf50);
+}
+
+/* Dark theme for mnemonic header */
+[data-theme='dark'] .mnemonic-header {
+  color: var(--text-primary-dark, #e0e0e0);
+}
+
+[data-theme='dark'] .mnemonic-header:hover {
+  background-color: var(--bg-hover-dark, #333);
+}
+
+[data-theme='dark'] .triangle {
+  color: var(--text-secondary-dark, #aaa);
+}
+
+[data-theme='dark'] .mnemonic-subtitle {
+  color: var(--text-secondary-dark, #aaa);
 }
 
 /* Responsive design */

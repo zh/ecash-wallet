@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { useAtom } from 'jotai';
 import {
@@ -23,7 +23,7 @@ const SecurityWarnings = ({
   const [lastCheck, setLastCheck] = useState(0);
 
   // Check for security threats
-  const checkSecurityThreats = async () => {
+  const checkSecurityThreats = useCallback(async () => {
     if (!wallet || !walletConnected) {
       setSecurityThreats(null);
       return;
@@ -116,7 +116,7 @@ const SecurityWarnings = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, [wallet, walletConnected, setSecurityThreats]);
 
   // Auto-check security when wallet connects and periodically
   useEffect(() => {
@@ -135,7 +135,7 @@ const SecurityWarnings = ({
       setSecurityThreats(null);
       setDismissed(new Set());
     }
-  }, [walletConnected, lastCheck]);
+  }, [walletConnected, lastCheck, checkSecurityThreats, setSecurityThreats]);
 
   const dismissWarning = (warningId) => {
     setDismissed(new Set([...dismissed, warningId]));

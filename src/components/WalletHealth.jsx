@@ -222,7 +222,7 @@ const WalletHealth = () => {
     } finally {
       setLoading(false);
     }
-  }, [wallet, walletConnected, setWalletHealth, setUtxoClassifications, setSecurityThreats]);
+  }, [wallet, walletConnected, setWalletHealth, setUtxoClassifications, setSecurityThreats, balanceBreakdown]);
 
   // Auto-fetch health data when wallet connects
   useEffect(() => {
@@ -234,7 +234,7 @@ const WalletHealth = () => {
       setSecurityThreats(null);
       setError(null);
     }
-  }, [walletConnected, fetchWalletHealth]);
+  }, [walletConnected, fetchWalletHealth, setWalletHealth, setUtxoClassifications, setSecurityThreats]);
 
   const getHealthScore = (health) => {
     if (!health || !health.statistics) return { score: 0, label: 'Unknown' };

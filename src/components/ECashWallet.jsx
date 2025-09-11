@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { useAtom } from 'jotai';
-import { walletAtom, walletConnectedAtom, balanceAtom, derivationModeAtom, hdPathAtom, savedMnemonicAtom, mnemonicSetterAtom } from '../atoms';
+import { walletAtom, walletConnectedAtom, balanceAtom, derivationModeAtom, hdPathAtom, savedMnemonicAtom, mnemonicSetterAtom, mnemonicCollapsedAtom } from '../atoms';
 import { QRCodeSVG } from 'qrcode.react';
 import { validateMnemonic, generateMnemonic } from '@scure/bip39';
 import { wordlist } from '@scure/bip39/wordlists/english';
@@ -19,6 +19,7 @@ const ECashWallet = () => {
   const [hdPath] = useAtom(hdPathAtom);
   const [savedMnemonic] = useAtom(savedMnemonicAtom);
   const [, setSavedMnemonic] = useAtom(mnemonicSetterAtom);
+  const [mnemonicCollapsed, setMnemonicCollapsed] = useAtom(mnemonicCollapsedAtom);
 
   const { importWallet, disconnectWallet, clearWalletData } = useConnectWallet();
 
@@ -97,10 +98,17 @@ const ECashWallet = () => {
   };
 
   const handleResetMnemonic = () => {
-    clearWalletData();
-    setEditableMnemonic('');
-    setSuccessMessage('');
-    setErrorMessage('');
+    if (window.confirm('Reset wallet? This deletes all data.')) {
+      clearWalletData();
+      setEditableMnemonic('');
+      setSuccessMessage('');
+      setErrorMessage('');
+      setMnemonicCollapsed(false);
+    }
+  };
+
+  const toggleMnemonicCollapsed = () => {
+    setMnemonicCollapsed(!mnemonicCollapsed);
   };
 
   // Initialize editable mnemonic from saved mnemonic when component mounts
@@ -108,7 +116,11 @@ const ECashWallet = () => {
     if (savedMnemonic && !editableMnemonic) {
       setEditableMnemonic(savedMnemonic);
     }
-  }, [savedMnemonic, editableMnemonic]);
+    // Always expand mnemonic section when mnemonic is empty (first access)
+    if (!editableMnemonic && !savedMnemonic) {
+      setMnemonicCollapsed(false);
+    }
+  }, [savedMnemonic, editableMnemonic, setMnemonicCollapsed]);
 
   return (
     <div className="ecash-wallet">
@@ -127,38 +139,61 @@ const ECashWallet = () => {
           <HdPathSelector />
 
           <div className="mnemonic-section">
-            <label htmlFor="mnemonic-input">
-              Wallet Mnemonic (12 words):
-            </label>
-            <textarea
-              id="mnemonic-input"
-              value={editableMnemonic}
-              onChange={(e) => setEditableMnemonic(e.target.value)}
-              placeholder={editableMnemonic.trim()
-                ? "Your 12-word mnemonic phrase"
-                : "Your generated mnemonic will appear here"}
-              rows="3"
-              className="mnemonic-input"
-            />
-            <div className="mnemonic-buttons">
-              {!editableMnemonic.trim() ? (
-                <button onClick={generateNewMnemonic} className="generate-btn">
-                  Generate
-                </button>
-              ) : (
-                <>
-                  <button onClick={handleConnectFromSaved}>
-                    Connect
-                  </button>
-                  <button onClick={handleSaveMnemonic}>
-                    Save
-                  </button>
-                  <button onClick={handleResetMnemonic}>
-                    Reset
-                  </button>
-                </>
-              )}
+            <div
+              className="mnemonic-header"
+              onClick={toggleMnemonicCollapsed}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  toggleMnemonicCollapsed();
+                }
+              }}
+              tabIndex={0}
+              role="button"
+              aria-expanded={!mnemonicCollapsed}
+              aria-controls="mnemonic-content"
+            >
+              <span className={`triangle ${mnemonicCollapsed ? 'collapsed' : 'expanded'}`}>
+                ▼
+              </span>
+              <span className="mnemonic-title">
+                Wallet Mnemonic <span className="mnemonic-subtitle">(12 words)</span>
+              </span>
             </div>
+
+            {!mnemonicCollapsed && (
+              <div id="mnemonic-content" className="mnemonic-content">
+                <textarea
+                  id="mnemonic-input"
+                  value={editableMnemonic}
+                  onChange={(e) => setEditableMnemonic(e.target.value)}
+                  placeholder={editableMnemonic.trim()
+                    ? "Your 12-word mnemonic phrase"
+                    : "Your generated mnemonic will appear here"}
+                  rows="3"
+                  className="mnemonic-input"
+                />
+                <div className="mnemonic-buttons">
+                  {!editableMnemonic.trim() ? (
+                    <button onClick={generateNewMnemonic} className="generate-btn">
+                      Generate
+                    </button>
+                  ) : (
+                    <>
+                      <button onClick={handleConnectFromSaved}>
+                        Connect
+                      </button>
+                      <button onClick={handleSaveMnemonic}>
+                        Save
+                      </button>
+                      <button onClick={handleResetMnemonic}>
+                        Reset
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
 

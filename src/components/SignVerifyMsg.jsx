@@ -22,45 +22,6 @@ const SignVerifyMsg = () => {
 
   const MAX_MESSAGE_LENGTH = 200;
 
-  // Handle mode toggle
-  const toggleMode = () => {
-    const newMode = mode === 'sign' ? 'verify' : 'sign';
-    
-    // Debug wallet structure for address resolution
-    console.log('🔧 SignVerifyMsg toggleMode debug:', {
-      newMode,
-      wallet: wallet,
-      walletInfo: wallet?.walletInfo,
-      xecAddress: wallet?.walletInfo?.xecAddress,
-      addressFallback: wallet?.walletInfo?.address,
-      walletConnected: walletConnected
-    });
-    
-    setMode(newMode);
-    // Reset state when switching modes
-    setMessage('');
-    setSignature('');
-    setVerifySignature('');
-    setVerificationResult(null);
-    
-    // Always populate address with wallet address when switching to verify mode
-    // Use correct wallet path with fallback (same pattern as Address.jsx)
-    const walletAddress = wallet?.walletInfo?.xecAddress || wallet?.walletInfo?.address;
-    
-    if (newMode === 'verify') {
-      if (walletAddress) {
-        console.log('✅ Setting verify address to:', walletAddress);
-        setVerifyAddress(walletAddress);
-      } else {
-        console.log('❌ No wallet address found for verify mode');
-        setVerifyAddress('');
-      }
-    } else if (newMode === 'sign') {
-      console.log('🧹 Clearing address when switching to sign mode');
-      setVerifyAddress(''); // Clear address when switching to sign mode
-    }
-  };
-
   // Handle message input change
   const handleMessageChange = (e) => {
     const value = e.target.value;
@@ -193,7 +154,7 @@ const SignVerifyMsg = () => {
   // Initialize verify address when wallet connects or mode changes
   useEffect(() => {
     const walletAddress = wallet?.walletInfo?.xecAddress || wallet?.walletInfo?.address;
-    
+
     console.log('🔧 SignVerifyMsg useEffect debug:', {
       mode,
       walletAddress,
@@ -201,12 +162,12 @@ const SignVerifyMsg = () => {
       walletConnected,
       walletInfo: wallet?.walletInfo
     });
-    
+
     if (mode === 'verify' && walletAddress) {
       console.log('✅ useEffect setting verify address to:', walletAddress);
       setVerifyAddress(walletAddress);
     }
-  }, [mode, wallet?.walletInfo?.xecAddress, wallet?.walletInfo?.address, walletConnected]);
+  }, [mode, wallet?.walletInfo?.xecAddress, wallet?.walletInfo?.address, walletConnected, verifyAddress, wallet?.walletInfo]);
 
   return (
     <div className="sign-verify-msg">
